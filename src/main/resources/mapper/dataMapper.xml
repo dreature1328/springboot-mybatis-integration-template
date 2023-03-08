@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.data.mapper.DataMapper">
+
+    <select id="selectData" parameterType="String" resultType="Data">
+        SELECT * FROM `data_table`
+        WHERE `id` = #{id}
+    </select>
+
+    <select id="batchSelectData" resultType="Data">
+        SELECT * FROM `data_table`
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="clearData">
+        TRUNCATE TABLE `data_table`
+    </update>
+
+    <insert id="insertData" parameterType="Data">
+        INSERT INTO `data_table`(`id`,`field1`,`field2`)
+        VALUES(#{id},#{attr1},#{attr2})
+    </insert>
+
+    <insert id="batchInsertData" parameterType="java.util.List">
+        INSERT INTO `data_table`(`id`,`field1`,`field2`)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.id},#{item.attr1},#{item.attr2})
+        </foreach>
+    </insert>
+
+    <update id="updateData" parameterType="Data">
+        UPDATE `data_table`
+        SET `field1` = #{attr1}, `field2` = #{attr2}
+        WHERE `id` = #{id}
+    </update>
+
+    <update id="batchUpdateData" parameterType="java.util.List">
+        UPDATE `data_table`
+        <trim prefix="SET" suffixOverrides=",">
+            <trim prefix=" `field1` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.attr1}
+                </foreach>
+            </trim>
+            <trim prefix=" `field2` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} then #{item.attr2}
+                </foreach>
+            </trim>
+        </trim>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <insert id="insertOrUpdateData" parameterType="Data">
+        INSERT INTO `data_table` (`id`,`field1`,`field2`)
+        VALUES (#{id},#{attr1},#{attr2})
+        ON DUPLICATE KEY UPDATE
+        `id` = VALUES(`id`),
+        `field1` = VALUES(`field1`),
+        `field2` = VALUES(`field2`)
+    </insert>
+
+    <insert id="batchInsertOrUpdateData" parameterType="java.util.List">
+        INSERT INTO `data_table` (`id`,`field1`,`field2`)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id},#{item.attr1},#{item.attr2})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        `id` = VALUES(`id`),
+        `field1` = VALUES(`field1`),
+        `field2` = VALUES(`field2`)
+    </insert>
+
+    <delete id="deleteData" parameterType="String">
+        DELETE FROM `data_table` WHERE `id` = #{id}
+    </delete>
+
+    <delete id="batchDeleteData">
+        DELETE FROM `data_table`
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+
+</mapper>
