@@ -44,7 +44,7 @@ public class JSONUtils {
     public static String objToStr(Object obj){
         return JSON.toJSONString(obj);
     }
-    // Java 对象转 JSON 字符串
+    // Java 对象转 JSON 对象
     public static JSONObject objToJSONObj(Object obj){
         return (JSONObject) JSON.toJSON(obj);
     }

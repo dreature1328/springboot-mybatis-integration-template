@@ -130,6 +130,24 @@ public class TimeUtils {
         Date from = Date.from(endOfDay.atZone(ZoneId.of(defaultZone)).toInstant());
         return from.toInstant();
     }
+    // 获取起始时间至今，每天同一时刻的时间戳（列表）
+    public static List<Long> getTimestampToNow(Integer year, Integer month, Integer day, Integer hour, Integer minute, Integer second, Integer nanoOfSecond) {
+
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        List<Long> timestamps = new ArrayList<>();
+
+        LocalDateTime startTime = LocalDateTime.of(year, month, day, hour, minute, second, nanoOfSecond);
+
+        LocalDateTime endTime = startTime;
+        LocalDateTime now = LocalDateTime.now();
+
+        while (endTime.isBefore(now) || endTime.isEqual(now)) {
+            timestamps.add(endTime.toEpochSecond(ZoneOffset.ofHours(8)));
+            endTime = endTime.plusDays(1L);
+        }
+        return timestamps;
+    }
     // 获取起始日期至今的所有年月日（列表）
     public static List<String> getDatesToDate(Integer year, Integer month, Integer day) {
 

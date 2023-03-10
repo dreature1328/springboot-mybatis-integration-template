@@ -1,13 +1,3 @@
-package com.springboot.data.mapper;
-
-import com.springboot.data.common.pojo.Data;
-import org.apache.ibatis.annotations.Mapper;
-
-import java.util.List;
-
-@Mapper
-public interface DataMapper {
-
     public Data selectData(String id);
     public List<Data> batchSelectData(List<String> idList);
     public void insertData(Data data);
@@ -19,4 +9,3 @@ public interface DataMapper {
     public void deleteData(String id);
     public void batchDeleteData(List<String> idList);
     public void clearData();
-}

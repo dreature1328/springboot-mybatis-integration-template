@@ -1,8 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.springboot.data.mapper.DataMapper">
-
     <!-- 依次查询 -->
     <select id="selectData" parameterType="String" resultType="Data">
         SELECT * FROM `data_table`
@@ -71,7 +66,7 @@
     <insert id="insertOrUpdateData" parameterType="Data">
         INSERT INTO `data_table` (`id`,`field1`,`field2`)
         VALUES (#{id},#{attr1},#{attr2})
-            ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `field1` = VALUES(`field1`), `field2` = VALUES(`field2`)
+        ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `field1` = VALUES(`field1`), `field2` = VALUES(`field2`)
     </insert>
 
     <!-- 批量插入或更新 -->
@@ -103,4 +98,3 @@
     <update id="clearData">
         TRUNCATE TABLE `data_table`
     </update>
-</mapper>
