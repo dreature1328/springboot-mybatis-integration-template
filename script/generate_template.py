@@ -89,19 +89,29 @@ for index, action_name in enumerate(action_name_list):
     if(not action_param_lower_name in params): params[action_param_lower_name] = action_name_list[index].lower()
 
 # Common 层
-text11 = '\n'.join(['public class ${class_name} {'])
-# 类的属性
-text12 = '\n'.join(['    public ${class_name}('])
 
-text13 = '\n'.join(['    // 类的成员列表构造函数']) # 类的成员列表构造函数
+# 类的属性
+text11 = '\n'.join([
+    'public class ${class_name} {',
+    '    // 类的属性',
+    ])
+
+# 类的成员列表构造函数
+text12 = '\n'.join([
+    '    // 类的成员列表构造函数',
+    '    public ${class_name}('
+    ])
+
+text13 = '\n'.join(['{']) 
 text14 = '\n'.join([ # 类的复制构造函数
     '    // 类的复制构造函数',
     '    public ${class_name}(${class_name} ${object_name}) {'
     ])
-text15 = '\n'.join(['    // 类的 Setter 方法']) # 类的 Setter 方法
-text16 = '\n'.join(['    // 类的 Getter 方法']) # 类的 Getter 方法
-# 重写类的 toString() 函数
+text15 = '\n'.join(['    // 类的 Getter 方法']) # 类的 Getter 方法
+text16 = '\n'.join(['    // 类的 Setter 方法']) # 类的 Setter 方法
+# 重写类的 toString 方法
 text17 = '\n'.join([
+    '    // 重写类的 toString 方法',
     '    @Override',
     '    public String toString() {',
     '        return',
@@ -211,8 +221,8 @@ for index, json_key in enumerate(json_key_list):
  
     text11 = '\n'.join([text11, '    private String ${' + java_attr_param_name + '};'])
     text12 = '\n'.join([text12, '        String ${' + java_attr_param_name + '}'])
-    text13 = '\n'.join([text13, '        this.${' + java_attr_param_name + '}=${' + java_attr_param_name + '};'])
-    text14 = '\n'.join([text14, '        this.${' + java_attr_param_name + '}=${object_name}.get' + java_attr.capitalize() + '();'])
+    text13 = '\n'.join([text13, '        this.${' + java_attr_param_name + '} = ${' + java_attr_param_name + '};'])
+    text14 = '\n'.join([text14, '        this.${' + java_attr_param_name + '} = ${object_name}.get' + java_attr.capitalize() + '();'])
     text15 = '\n'.join([text15,
         '    public String get' + java_attr.capitalize() + '() {',
         '        return ${' + java_attr_param_name + '};',
@@ -220,7 +230,7 @@ for index, json_key in enumerate(json_key_list):
         ])
     text16 = '\n'.join([text16,
         '    public void set' + java_attr.capitalize() + '(String ${' + java_attr_param_name + '}) {',
-        '        this.${' + java_attr_param_name + '}=${' + java_attr_param_name + '};',
+        '        this.${' + java_attr_param_name + '} = ${' + java_attr_param_name + '};',
         '    }'
         ])
 
@@ -247,7 +257,7 @@ for index, json_key in enumerate(json_key_list):
 
     if(is_the_last):
         text12 = '\n'.join([text12,
-            '    ){'
+            '    )'
             ])
         text13 = '\n'.join([text13,
             '    }'
@@ -279,13 +289,6 @@ for index, json_key in enumerate(json_key_list):
         text61 += ','
 
 # Controller 层
-text21 = '\n'.join([
-    '    @RequestMapping("/${url_name}/clear")',
-    '    public void clear${class_name}() throws Exception {',
-    '        ${project_name}Service.clear${class_name}();',
-    '        return ;',
-    '    }'
-    ])
 
 text201 = '\n'.join([
     '	@RequestMapping("/${url_name}/${action_name_lower}")',
@@ -310,46 +313,52 @@ text203 = '\n'.join([
     ])
 
 text211 = '\n'.join([
+    '    // 发送请求',
     '    @RequestMapping("/${url_name}/${action_name_1_lower}")',
     '    public String ${action_name_1_lower_camel}${class_name}(HttpServletRequest request) throws Exception {',
     '        return ${project_name}Service.${action_name_1_lower_camel}${class_name}(request.getParameterMap());',
     '    }'
     ])
 text221 = '\n'.join([
+    '    // 依次查询',
     '	@RequestMapping("/${url_name}/${action_name_2_lower}")',
     '	public JSONObject ${action_name_2_lower_camel}${class_name}(String ${primary_key_attr_name}) throws Exception {',
     '		return (JSONObject) JSON.toJSON(${project_name}Service.${action_name_2_lower_camel}${class_name}(${primary_key_attr_name}));',
     '	}'
     ])
 text222 = '\n'.join([
+    '    // 批量查询',
     '	@RequestMapping("/${url_name}/b${action_name_2_lower}")',
     '	public JSONArray batch${action_name_2_upper_camel}${class_name}(String ${primary_key_attr_name}s) throws Exception {',
     '		return JSONArray.parseArray(JSON.toJSONString(${project_name}Service.batch${action_name_2_upper_camel}${class_name}(${primary_key_attr_name}s)));',
     '	}'
     ])
 text223 = '\n'.join([
+    '    // 分页查询',
     '	@RequestMapping("/${url_name}/p${action_name_2_lower}")',
     '	public JSONArray page${action_name_2_upper_camel}${class_name}(String ${primary_key_attr_name}s) throws Exception {',
     '		return JSONArray.parseArray(JSON.toJSONString(${project_name}Service.page${action_name_2_upper_camel}${class_name}(${primary_key_attr_name}s)));',
     '	}'
     ])
-text231 = text201.replace('${action_name','${action_name_3')
-text232 = text202.replace('${action_name','${action_name_3')
-text233 = text203.replace('${action_name','${action_name_3')
-text241 = text201.replace('${action_name','${action_name_4')
-text242 = text202.replace('${action_name','${action_name_4')
-text243 = text203.replace('${action_name','${action_name_4')
-text251 = text201.replace('${action_name','${action_name_5')
-text252 = text202.replace('${action_name','${action_name_5')
-text253 = text203.replace('${action_name','${action_name_5')
+text231 = '\n'.join(['    // 依次插入',text201.replace('${action_name','${action_name_3')])
+text232 = '\n'.join(['    // 批量插入',text202.replace('${action_name','${action_name_3')])
+text233 = '\n'.join(['    // 分页插入',text203.replace('${action_name','${action_name_3')])
+text241 = '\n'.join(['    // 依次更新',text201.replace('${action_name','${action_name_4')])
+text242 = '\n'.join(['    // 批量更新',text202.replace('${action_name','${action_name_4')])
+text243 = '\n'.join(['    // 分页更新',text203.replace('${action_name','${action_name_4')])
+text251 = '\n'.join(['    // 依次插入或更新',text201.replace('${action_name','${action_name_5')])
+text252 = '\n'.join(['    // 批量插入或更新',text202.replace('${action_name','${action_name_5')])
+text253 = '\n'.join(['    // 分页插入或更新',text203.replace('${action_name','${action_name_5')])
 text261 = '\n'.join([
+    '    // 依次删除',
     '	@RequestMapping("/${url_name}/${action_name_6_lower}")',
     '	public void ${action_name_6_lower_camel}${class_name}(String ${primary_key_attr_name}) throws Exception {',
-    '		${project_name}Service.batch${action_name_6_upper_camel}${class_name}(${primary_key_attr_name});',
+    '		${project_name}Service.${action_name_6_lower_camel}${class_name}(${primary_key_attr_name});',
     '		return ;',
     '	}'
     ])
 text262 = '\n'.join([
+    '    // 批量删除',
     '	@RequestMapping("/${url_name}/b${action_name_6_lower}")',
     '	public void batch${action_name_6_upper_camel}${class_name}(String ${primary_key_attr_name}s) throws Exception {',
     '		${project_name}Service.batch${action_name_6_upper_camel}${class_name}(${primary_key_attr_name}s);',
@@ -357,6 +366,7 @@ text262 = '\n'.join([
     '	}'
     ])
 text263 = '\n'.join([
+    '    // 分页删除',
     '	@RequestMapping("/${url_name}/p${action_name_6_lower}")',
     '	public void page${action_name_6_upper_camel}${class_name}(String ${primary_key_attr_name}s) throws Exception {',
     '		${project_name}Service.page${action_name_6_upper_camel}${class_name}(${primary_key_attr_name}s);',
@@ -364,6 +374,7 @@ text263 = '\n'.join([
     '	}'
     ])
 text271 = '\n'.join([
+    '    // 清空',
     '	@RequestMapping("/${url_name}/${action_name_7_lower}")',
     '	public void ${action_name_7_lower_camel}${class_name}() throws Exception {',
     '		${project_name}Service.${action_name_7_lower_camel}${class_name}();',
@@ -374,17 +385,50 @@ text271 = '\n'.join([
 
 
 # Mapper 层
-text321 = '    public ${class_name} ${action_name_2_lower_camel}${class_name}(String ${primary_key_attr_name});'
-text322 = '    public List<${class_name}> batch${action_name_2_upper_camel}${class_name}(List<String> ${primary_key_attr_name}List);'
-text331 = '    public void ${action_name_3_lower_camel}${class_name}(${class_name} ${object_name});'
-text332 = '    public void batch${action_name_3_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
-text341 = '    public void ${action_name_4_lower_camel}${class_name}(${class_name} ${object_name});'
-text342 = '    public void batch${action_name_4_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
-text351 = '    public void ${action_name_5_lower_camel}${class_name}(${class_name} ${object_name});'
-text352 = '    public void batch${action_name_5_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
-text361 = '    public void ${action_name_6_lower_camel}${class_name}(String ${primary_key_attr_name});'
-text362 = '    public void batch${action_name_6_upper_camel}${class_name}(List<String> ${primary_key_attr_name}List);'
-text371 = '    public void clear${class_name}();'
+text321 = '\n'.join([
+    '    // 依次查询',
+    '    public ${class_name} ${action_name_2_lower_camel}${class_name}(String ${primary_key_attr_name});'
+    ])
+text322 = '\n'.join([
+    '    // 批量查询',
+    '    public List<${class_name}> batch${action_name_2_upper_camel}${class_name}(List<String> ${primary_key_attr_name}List);'
+    ])
+text331 = '\n'.join([
+    '    // 依次插入',
+    '    public void ${action_name_3_lower_camel}${class_name}(${class_name} ${object_name});'
+    ])
+text332 = '\n'.join([
+    '    // 批量插入',
+    '    public void batch${action_name_3_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
+    ])
+text341 = '\n'.join([
+    '    // 依次更新',
+    '    public void ${action_name_4_lower_camel}${class_name}(${class_name} ${object_name});'
+    ])
+text342 = '\n'.join([
+    '    // 批量更新',
+    '    public void batch${action_name_4_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
+    ])
+text351 = '\n'.join([
+    '    // 依次插入或更新',
+    '    public void ${action_name_5_lower_camel}${class_name}(${class_name} ${object_name});'
+    ])
+text352 = '\n'.join([
+    '    // 批量插入或更新',
+    '    public void batch${action_name_5_upper_camel}${class_name}(List<${class_name}> ${object_name}List);'
+    ])
+text361 = '\n'.join([
+    '    // 依次删除',
+    '    public void ${action_name_6_lower_camel}${class_name}(String ${primary_key_attr_name});'
+    ])
+text362 = '\n'.join([
+    '    // 批量删除',
+    '    public void batch${action_name_6_upper_camel}${class_name}(List<String> ${primary_key_attr_name}List);'
+    ])
+text371 = '\n'.join([
+    '    // 清空',
+    '    public void clear${class_name}();'
+    ])
 
 
 # 发送请求并获取返回的 JSON 字符串
@@ -638,7 +682,7 @@ text463 = '\n'.join([
     '            start = (i - 1) * pageSize;',
     '            if(i == pageNum) end = ${primary_key_attr_name}Size;',
     '            else end = i * pageSize;',
-    '            ${project_name}Mapper.batch${action_name_6_upper_camel}${class_name}(${primary_key_attr_name}List.subList(start, end));',
+    '            ${project_name}Mapper.${action_name_6_upper_camel}${class_name}(${primary_key_attr_name}List.subList(start, end));',
     '        }',
     '        return ;',
     '    }'
@@ -778,10 +822,9 @@ for index, json_key in enumerate(json_key_list):
 
 with open(params['output_name_1'],"w",encoding='utf-8') as f:
 
-    f.write(Template('\n'.join([
+    f.write(Template('\n\n'.join([
         text11,
-        text12,
-        text13,
+        text12 + text13,
         text14,
         text15,
         text16,

@@ -310,7 +310,7 @@
             start = (i - 1) * pageSize;
             if(i == pageNum) end = idSize;
             else end = i * pageSize;
-            dataMapper.batchDeleteData(idList.subList(start, end));
+            dataMapper.DeleteData(idList.subList(start, end));
         }
         return ;
     }

@@ -1,24 +1,28 @@
 public class Data {
+    // 类的属性
     private String id;
     private String attr1;
     private String attr2;
+
+    // 类的成员列表构造函数
     public Data(
         String id,
         String attr1,
         String attr2
     ){
-    // 类的成员列表构造函数
-        this.id=id;
-        this.attr1=attr1;
-        this.attr2=attr2;
+        this.id = id;
+        this.attr1 = attr1;
+        this.attr2 = attr2;
     }
+
     // 类的复制构造函数
     public Data(Data data) {
-        this.id=data.getId();
-        this.attr1=data.getKey1();
-        this.attr2=data.getKey2();
+        this.id = data.getId();
+        this.attr1 = data.getKey1();
+        this.attr2 = data.getKey2();
     }
-    // 类的 Setter 方法
+
+    // 类的 Getter 方法
     public String getId() {
         return id;
     }
@@ -28,16 +32,19 @@ public class Data {
     public String getKey2() {
         return attr2;
     }
-    // 类的 Getter 方法
+
+    // 类的 Setter 方法
     public void setId(String id) {
-        this.id=id;
+        this.id = id;
     }
     public void setKey1(String attr1) {
-        this.attr1=attr1;
+        this.attr1 = attr1;
     }
     public void setKey2(String attr2) {
-        this.attr2=attr2;
+        this.attr2 = attr2;
     }
+
+    // 重写类的 toString 方法
     @Override
     public String toString() {
         return

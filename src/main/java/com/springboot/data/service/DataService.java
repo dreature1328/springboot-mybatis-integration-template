@@ -534,4 +534,79 @@ public class DataService {
         dataMapper.clearData();
         return ;
     }
+
+    // 定期执行，首次发起请求后每隔一段固定的时间就执行一次
+    public void performTaskPeriodically(long secondPeriod) throws InterruptedException {
+        System.out.println("已安排定期任务，每"+ secondPeriod + "秒更新所有表");
+        Timer timer = new Timer();
+
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    // 将要定期执行的任务（函数调用）写在此处
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        // 第一次任务延迟时间
+        long delay = 2000;
+        // 任务执行频率(secondPeriod 单位为秒，period 单位为毫秒)
+        long period = secondPeriod * 1000;
+        // 开始调度
+        timer.schedule(timerTask, delay, period);
+        // 指定首次运行时间
+        // timer.schedule(timerTask, DateUtils.addSeconds(new Date(), 5), period);
+
+        // 在某段时间内让任务按频率执行，此后结束进程，Long.MAX_VALUE 可以近似理解为只要不受外力结束进程，就永久按频率执行
+        Thread.sleep(Long.MAX_VALUE);
+
+        // 终止并移除任务
+        timer.cancel();
+        timer.purge();
+    }
+
+    // 定时执行，每天在指定的时间点执行
+    public void performTaskOnSchedule(long secondPeriod) throws InterruptedException {
+
+        // 设置首次执行时间
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        // 当天的 23:00:00 首次执行，
+        calendar.set(year, month, day, 23, 00, 00);
+        Date date = calendar.getTime();
+        Timer timer = new Timer();
+
+        // 任务执行频率
+        long period = secondPeriod * 1000;
+
+        System.out.println("已安排定时任务，计划在"+ date + "更新所有表");
+
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    // 将要定时执行的任务（函数调用）写在此处
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        // 指定首次运行时间，并每隔 period 再次执行（默认每隔一天）
+        timer.schedule(timerTask, DateUtils.addSeconds(date, 5), period);
+
+        // 在某段时间内让任务按频率执行，此后结束进程，Long.MAX_VALUE 可以近似理解为只要不受外力结束进程，就永久按频率执行
+        Thread.sleep(Long.MAX_VALUE);
+
+        // 终止并移除任务
+        timer.cancel();
+        timer.purge();
+    }
 }
