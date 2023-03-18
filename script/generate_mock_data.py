@@ -1,37 +1,22 @@
-
-
-
-
-
+import json
 import random
 
-def generate_random_str(randomlength = 16):
-  # randomlength 是生成值的长度
-  random_str =''
-  base_str ='ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789'
-  length =len(base_str) -1
-  for i in range(randomlength):
-    random_str += base_str[random.randint(0, length)]
-  return random_str
+def generate_random_str(randomlength=16):
+    # randomlength 是生成值的长度
+    # 将字符集定义为常量
+    base_str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    return ''.join(random.choices(base_str, k=randomlength))
 
 def generate_mock_json(id):
-    return '        {"id":"' + str(id).zfill(6) + '","key1":"' + generate_random_str() + '","key2":"' + generate_random_str() + '"}';
+    # str.zfill() 将数字前面填充 0 直到达到指定长度
+    return {
+        "id": str(id).zfill(6),
+        "key1": generate_random_str(),
+        "key2": generate_random_str()
+    }
 
-with open('mock_data.json',"w",encoding='utf-8') as f:
-    mock_data = '\n'.join([
-        '{',
-        '    "code" : "200",',
-        '    "msg" : "success",',
-        '    "data" : [\n'                                                           
-        ])
-    length = 500
-    for i in range(0, length):
-       mock_data += generate_mock_json(i+1)
-       if(i != length -1): mock_data += ',\n'
-    mock_data = '\n'.join([mock_data,
-        '    ]',
-        '}'
-        ])
-    f.write(mock_data)
-    f.flush() # 写入硬盘            
-    f.close() # 关闭文件
+# 利用 json.dump() 函数将生成的数据直接写入文件
+data = {"code": "200", "msg": "success", "data": [generate_mock_json(i+1) for i in range(500)]}
+
+with open('mock_data.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=4)

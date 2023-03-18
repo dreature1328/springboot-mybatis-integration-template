@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.springboot.data.common.pojo.Data;
-import com.springboot.data.common.utils.JSONUtils;
 import com.springboot.data.mapper.DataMapper;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -29,6 +27,18 @@ public class DataService {
 
     @Autowired
     private DataMapper dataMapper;
+
+    // 请求头示例
+    private Map<String, String> headers = new HashMap<String, String>(){{
+        // 设置接收内容类型
+        put("Accept","application/json");
+        // 设置发送内容类型
+        put("Content-Type","application/json;charset=UTF-8");
+        // 设置字符集
+        put("charset", "UTF-8");
+        // 设置访问者系统引擎版本、浏览器信息的字段信息，此处伪装成用户通过浏览器访问
+        put("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
+    }};
     private static void disableSslVerification() {
         try
         {

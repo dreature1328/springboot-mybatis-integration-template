@@ -23,3 +23,5 @@
 具体使用过程为：在 `script` 文件夹下，在 `config.properties` 里填写相应参数，随后在 `demo.json` 里加上你的 JSON 数据（暂不支持嵌套），其后运行 `generate_template.py` 即可生成模板相关的代码段（目前是 7 个 txt 文件），将代码段替换项目中对应位置的示例代码即可。
 
 此外，还可以运行 `script` 文件夹下的 `generate_mock_data.py` 生成随机数据 `mock_data.json` 供测试。
+
+本项目还有可以升级的空间，如 HTTP 请求
