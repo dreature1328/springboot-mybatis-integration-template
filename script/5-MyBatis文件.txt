@@ -1,66 +1,3 @@
-    <!-- 依次查询 -->
-    <select id="selectData" parameterType="String" resultType="Data">
-        SELECT * FROM `data_table`
-        WHERE `id` = #{id}
-    </select>
-
-    <!-- 批量查询 -->
-    <select id="batchSelectData" resultType="Data">
-        SELECT * FROM `data_table`
-        WHERE `id` IN
-        <foreach collection="list" item="item" open="(" close=")" separator=",">
-            #{item}
-        </foreach>
-    </select>
-
-    <!-- 依次插入 -->
-    <insert id="insertData" parameterType="Data">
-        INSERT INTO `data_table` (`id`,`field1`,`field2`)
-        VALUES (#{id},#{attr1},#{attr2})
-    </insert>
-
-    <!-- 批量插入 -->
-    <insert id="batchInsertData" parameterType="java.util.List">
-        INSERT INTO `data_table` (`id`,`field1`,`field2`)
-        VALUES
-        <foreach collection="list" item="item" index="index" separator="," >
-            (#{item.id},#{item.attr1},#{item.attr2})
-        </foreach>
-    </insert>
-
-    <!-- 依次更新 -->
-    <update id="updateData" parameterType="Data">
-        UPDATE `data_table`
-        SET `id` = #{id}, `field1` = #{attr1}, `field2` = #{attr2}
-        WHERE `id` = #{id}
-    </update>
-
-    <!-- 批量更新 -->
-    <update id="batchUpdateData" parameterType="java.util.List">
-        UPDATE `data_table`
-        <trim prefix="SET" suffixOverrides=",">
-            <!-- WHEN ... THEN ... 语句相当于编程语言中的 switch 语句 -->
-            <trim prefix=" `id` = CASE " suffix=" END, ">
-                <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.id}
-                </foreach>
-            </trim>
-            <trim prefix=" `field1` = CASE " suffix=" END, ">
-                <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.attr1}
-                </foreach>
-            </trim>
-            <trim prefix=" `field2` = CASE " suffix=" END, ">
-                <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.attr2}
-                </foreach>
-            </trim>
-        </trim>
-        WHERE `id` IN
-        <foreach collection="list" item="item" open="(" close=")" separator=",">
-            #{item.id}
-        </foreach>
-    </update>
 
     <!-- 依次插入或更新 -->
     <insert id="insertOrUpdateData" parameterType="Data">
@@ -78,21 +15,6 @@
         </foreach>
         ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `field1` = VALUES(`field1`), `field2` = VALUES(`field2`)
     </insert>
-
-    <!-- 依次删除 -->
-    <delete id="deleteData" parameterType="String">
-        DELETE FROM `data_table`
-        WHERE `id` = #{id}
-    </delete>
-
-    <!-- 批量删除 -->
-    <delete id="batchDeleteData" parameterType="java.util.List">
-        DELETE FROM `data_table`
-        WHERE `id` IN
-        <foreach collection="list" item="item" open="(" close=")" separator=",">
-            #{item}
-        </foreach>
-    </delete>
 
     <!-- 清空 -->
     <update id="clearData">

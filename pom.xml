@@ -11,9 +11,9 @@
 	</parent>
 
 	<groupId>com.springboot</groupId>
-	<artifactId>springboot-data-migration-template</artifactId>
+	<artifactId>springboot-mybatis-migrate-template</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>springboot-data-migration-template</name>
+	<name>springboot-mybatis-migrate-template</name>
 
 	<dependencies>
 		<!-- Spring Boot Starter 依赖-->

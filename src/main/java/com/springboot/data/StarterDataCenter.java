@@ -13,7 +13,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 @SpringBootApplication
 @MapperScan("com.springboot.data.mapper")
-@Import(SpringContextUtils.class)
 @Configuration      //1.主要用于标记配置类，兼备Component的效果。
 @EnableScheduling   // 2.开启定时任务
 public class StarterDataCenter {
@@ -21,11 +20,12 @@ public class StarterDataCenter {
 		SpringApplication.run(StarterDataCenter.class, args);
 	}
 
+
 //	@Autowired
 //	private DataService dataService;
-//
+//  // 此处的 cron 表达式意为每 5 分钟执行一次任务
 //	@Scheduled(cron ="0 */5 * * * ?")
-//	public void pageInsertOrUpdateDataOnSchedule() throws Exception {
-//		dataService.pageInsertOrUpdateData();
+//	public void migrateDataOptimizedOnSchedule() throws Exception {
+//		dataService.migrateDataOptimized();
 //	}
 }

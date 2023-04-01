@@ -1,28 +1,3 @@
-package com.springboot.data.service;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.springboot.data.common.pojo.Data;
-import com.springboot.data.common.utils.HTTPUtils;
-import com.springboot.data.mapper.DataMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.springboot.data.common.utils.HTTPUtils.*;
-
-@Service
-public class DataService {
-
 
     @Autowired
     private DataMapper dataMapper;
@@ -69,7 +44,7 @@ public class DataService {
         return resultList;
     }
 
-    // 迁移数据
+     // 迁移数据
     public void migrateData() throws Exception {
 
         // 自己按需求生成自定义参数列表
@@ -131,7 +106,7 @@ public class DataService {
         return response;
     }
 
-    // 依次请求
+    // 依次同步请求
     public List<String> requestData(List<? extends Map<String,?>> paramList) throws Exception {
         List<String> responses = new ArrayList<>();
         for(Map<String, ?> params : paramList) {
@@ -140,6 +115,7 @@ public class DataService {
         return responses;
     }
 
+    // 批量异步请求
     public List<String> batchRequestData(List<? extends Map<String,?>> paramList) {
         String strURL = "http://www.example.com";
         String method = "GET";
@@ -175,6 +151,7 @@ public class DataService {
         return responses;
     }
 
+    // 分页异步请求
     public List<String> pageRequestData(List<? extends Map<String,?>> paramList) {
         int pageSize = 300;
         return pageHandle(paramList, pageSize, this::batchRequestData);
@@ -190,7 +167,6 @@ public class DataService {
                 for (int i = 0; i < jsonInfo.size(); i++) {// 遍历 JSON 数组依次取出 JSON 对象
                     JSONObject jsonDetailInfo = jsonInfo.getJSONObject(i);
                     dataList.add(new Data(
-
                             jsonDetailInfo.getString("id"),
                             jsonDetailInfo.getString("key1"),
                             jsonDetailInfo.getString("key2")
@@ -217,7 +193,6 @@ public class DataService {
                 .filter(Objects::nonNull)
                 .flatMap(jsonObj -> jsonObj.getJSONArray("data").stream())
                 .map(jsonDetailInfo -> new Data(
-
                         ((JSONObject) jsonDetailInfo).getString("id"),
                         ((JSONObject) jsonDetailInfo).getString("key1"),
                         ((JSONObject) jsonDetailInfo).getString("key2")
@@ -249,7 +224,3 @@ public class DataService {
         return ;
     }
 
-
-
-
-}

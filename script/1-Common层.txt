@@ -1,5 +1,3 @@
-package com.springboot.data.common.pojo;
-
 public class Data {
     // 属性
     private String id;
@@ -12,9 +10,9 @@ public class Data {
 
     // 成员列表构造函数
     public Data(
-            String id,
-            String attr1,
-            String attr2
+        String id,
+        String attr1,
+        String attr2
     ) {
         this.id = id;
         this.attr1 = attr1;
@@ -43,15 +41,15 @@ public class Data {
     public void setId(String id) {
         this.id = id;
     }
-
+    
     public void setAttr1(String attr1) {
         this.attr1 = attr1;
     }
-
+    
     public void setAttr2(String attr2) {
         this.attr2 = attr2;
     }
-
+    
 
     // 重写 toString 方法
     @Override
