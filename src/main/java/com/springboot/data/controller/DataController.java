@@ -18,17 +18,24 @@ public class DataController {
 	@Autowired
 	private DataService dataService;
 
-	// 迁移
-	@RequestMapping("/data/migrate")
-	public void migrateData() throws Exception {
-		dataService.migrateData();
+	// 集成数据
+	@RequestMapping("/data/integrate")
+	public void integrateData() throws Exception {
+		dataService.integrateData(dataService.getParams());
 		return ;
 	}
 
-	// 迁移优化
-	@RequestMapping("/data/migratex")
-	public void migrateDataOptimized() throws Exception {
-		dataService.migrateDataOptimized();
+	// 优化集成数据
+	@RequestMapping("/data/integratex")
+	public void integrateDataOptimized() {
+		dataService.integrateDataOptimized(dataService.getParams());
+		return ;
+	}
+
+	// 分页优化集成数据
+	@RequestMapping("/data/pintegratex")
+	public void pageIntegrateDataOptimized() {
+		dataService.pageIntegrateDataOptimized(dataService.getParams());
 		return ;
 	}
 

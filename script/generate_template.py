@@ -9,7 +9,7 @@ config = configparser.ConfigParser()
 with open('config.properties', 'r', encoding='utf-8') as f:
     config.read_file(f)
 # 读取 JSON 文件
-with open('input.json', 'r') as f:
+with open('input.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 # 将参数项存储到字典中，后续替换进字符串中
@@ -90,17 +90,24 @@ text2 = f'''
 	@Autowired
 	private {project_name_pascal}Service {project_name}Service;
  
-    // 迁移
-    @RequestMapping("/{url_name}/migrate")
-    public void migrate{class_name}() throws Exception {{
-        {project_name}Service.migrate{class_name}();
+    // 集成
+    @RequestMapping("/{url_name}/integrate")
+    public void integrate{class_name}() throws Exception {{
+        {project_name}Service.integrate{class_name}({project_name}Service.getParams());
         return ;
     }}
 
-    // 迁移优化
-    @RequestMapping("/{url_name}/migratex")
-    public void migrate{class_name}Optimized() throws Exception {{
-        {project_name}Service.migrate{class_name}Optimized();
+    // 优化集成
+    @RequestMapping("/{url_name}/integratex")
+    public void integrate{class_name}Optimized() throws Exception {{
+        {project_name}Service.integrate{class_name}Optimized({project_name}Service.getParams());
+        return ;
+    }}
+    
+    // 分页优化集成
+    @RequestMapping("/{url_name}/pintegratex")
+    public void pageIntegrate{class_name}Optimized() throws Exception {{
+        {project_name}Service.pageIntegrate{class_name}Optimized({project_name}Service.getParams());
         return ;
     }}
 '''
@@ -125,6 +132,7 @@ text3 = f'''
 
     }}
 
+    // 分页处理
     public <T> void pageHandle(List<T> list, int pageSize, Consumer<List<T>> handleFunction){{
         int count = 0;
         while (!list.isEmpty()) {{
@@ -139,6 +147,7 @@ text3 = f'''
         }}
     }}
 
+    // 分页处理
     public <T, R> List<R> pageHandle(List<T> list, int pageSize, Function<List<T>, List<R>> handleFunction) {{
         List<R> resultList = new ArrayList<>();
         int count = 0;
@@ -157,11 +166,8 @@ text3 = f'''
         return resultList;
     }}
 
-     // 迁移数据
-    public void migrate{class_name}() throws Exception {{
-
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
+     // 集成
+    public void integrate{class_name}(List<? extends Map<String,?>> paramList) throws Exception {{
 
         // 同步请求并获取响应内容
         List<String> responses = request{class_name}(paramList);
@@ -175,11 +181,8 @@ text3 = f'''
         return ;
     }}
 
-    // 优化迁移数据
-    public void migrate{class_name}Optimized() throws Exception {{
-
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
+    // 优化集成
+    public void integrate{class_name}Optimized(List<? extends Map<String,?>> paramList) {{
 
         // 异步请求并获取响应内容
         List<String> responses = pageRequest{class_name}(paramList);
@@ -193,6 +196,16 @@ text3 = f'''
         return ;
     }}
 
+    // 分页优化集成
+    public void pageIntegrate{class_name}Optimized(List<? extends Map<String,?>> paramList) {{
+
+        int pageSize = {page_size};
+        pageHandle(paramList, pageSize, this::integrate{class_name}Optimized);
+
+        return ;
+    }}
+
+    // 生成请求参数
     public List<Map<String, String>> getParams() {{
         // 总请求数
         int totalRequests = 1000;

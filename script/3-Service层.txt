@@ -12,6 +12,7 @@
 
     }
 
+    // 分页处理
     public <T> void pageHandle(List<T> list, int pageSize, Consumer<List<T>> handleFunction){
         int count = 0;
         while (!list.isEmpty()) {
@@ -26,6 +27,7 @@
         }
     }
 
+    // 分页处理
     public <T, R> List<R> pageHandle(List<T> list, int pageSize, Function<List<T>, List<R>> handleFunction) {
         List<R> resultList = new ArrayList<>();
         int count = 0;
@@ -44,11 +46,8 @@
         return resultList;
     }
 
-     // 迁移数据
-    public void migrateData() throws Exception {
-
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
+     // 集成
+    public void integrateData(List<? extends Map<String,?>> paramList) throws Exception {
 
         // 同步请求并获取响应内容
         List<String> responses = requestData(paramList);
@@ -62,11 +61,8 @@
         return ;
     }
 
-    // 优化迁移数据
-    public void migrateDataOptimized() throws Exception {
-
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
+    // 优化集成
+    public void integrateDataOptimized(List<? extends Map<String,?>> paramList) {
 
         // 异步请求并获取响应内容
         List<String> responses = pageRequestData(paramList);
@@ -80,6 +76,16 @@
         return ;
     }
 
+    // 分页优化集成
+    public void pageIntegrateDataOptimized(List<? extends Map<String,?>> paramList) {
+
+        int pageSize = 300;
+        pageHandle(paramList, pageSize, this::integrateDataOptimized);
+
+        return ;
+    }
+
+    // 生成请求参数
     public List<Map<String, String>> getParams() {
         // 总请求数
         int totalRequests = 1000;

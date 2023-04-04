@@ -1,14 +1,22 @@
-由于作者最近频繁在迁移数据，因而基于 Spring Boot + MyBatis 写了两套模板：数据增删改查模板和数据迁移模板，辅之以两篇博客文章作为姊妹篇进行说明，前者可以说是后者的基础。本项目是数据迁移模板，在下面第二篇博客文章里有介绍。
+由于作者最近频繁在集成数据，因而基于 Spring Boot + MyBatis 写了两套模板：数据增删改查模板和数据集成模板，辅之以两篇博客文章作为姊妹篇进行说明，前者可以说是后者的基础。本项目是数据集成模板。下面是对应的博客文章和 Git 仓库。
 
 > 💬相关
 >
-> 博客文章《基于Spring Boot + MyBatis的数据增删改查模板》
+> 基于Spring Boot + MyBatis的数据增删改查模板
 >
 > https://blog.csdn.net/weixin_42077074/article/details/128868655
 >
-> 博客文章《基于Spring Boot + MyBatis的数据迁移模板》
+> https://gitee.com/dreature1328/springboot-mybatis-crud-template
+>
+> https://github.com/dreature1328/springboot-mybatis-crud-template
+>
+> 基于Spring Boot + MyBatis的数据集成模板
 >
 > https://blog.csdn.net/weixin_42077074/article/details/129802650
+>
+> https://gitee.com/dreature1328/springboot-mybatis-integrate-template
+>
+> https://github.com/dreature1328/springboot-mybatis-integrate-template
 
 在下面的博客文章中有详细介绍 MyBatis 部分的实现。
 

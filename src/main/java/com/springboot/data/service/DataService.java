@@ -18,7 +18,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.springboot.data.common.utils.HTTPUtils.*;
+import static com.springboot.data.common.utils.HTTPUtils.asyncHTTPRequest;
+import static com.springboot.data.common.utils.HTTPUtils.requestHTTPContent;
 
 @Service
 public class DataService {
@@ -69,11 +70,8 @@ public class DataService {
         return resultList;
     }
 
-    // 迁移数据
-    public void migrateData() throws Exception {
-
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
+    // 集成
+    public void integrateData(List<? extends Map<String,?>> paramList) throws Exception {
 
         // 同步请求并获取响应内容
         List<String> responses = requestData(paramList);
@@ -87,24 +85,56 @@ public class DataService {
         return ;
     }
 
-    // 优化迁移数据
-    public void migrateDataOptimized() throws Exception {
+    // 优化集成
+    public void integrateDataOptimized(List<? extends Map<String,?>> paramList){
 
-        // 自己按需求生成自定义参数列表
-        List<Map<String, String>> paramList = getParams();
-
-        // 异步请求并获取响应内容
+        // 分页异步请求并获取响应内容
         List<String> responses = pageRequestData(paramList);
 
         // 流水线加工数据，将响应内容加工成对象列表
-        List<Data> dataList = pielineProcessData(responses);
+        List<Data> DataList = processData(responses);
 
         // 将对象分页插入或更新进数据库
-        pageInsertOrUpdateData(dataList);
+        pageInsertOrUpdateData(DataList);
 
         return ;
     }
 
+    // 分页优化集成
+    public void pageIntegrateDataOptimized(List<? extends Map<String,?>> paramList){
+        int pageSize = 300;
+        pageHandle(paramList, pageSize, this::integrateDataOptimized);
+    }
+
+    // 单项查询
+    public Data selectData(String id) {
+        return dataMapper.selectData(id);
+    }
+
+    // 依次查询
+    public List<Data> selectData(String... idArray) {
+        List<Data> dataList = new ArrayList<>();
+        for(String id : idArray){
+            dataList.add(dataMapper.selectData(id));
+        }
+        return dataList;
+    }
+
+    // 批量查询
+    public List<Data> batchSelectData(List<String> idList) {
+        return dataMapper.batchSelectData(idList);
+    }
+
+    // 分页查询
+    public List<Data> pageSelectData(List<String> idList) {
+        int pageDataSize = 12000; // 页面数据量大小，即每页记录数 × 字段数，可自行设置
+        int totalFields = Data.class.getDeclaredFields().length; // 总字段数，即数据表中的列数
+        int pageSize = pageDataSize / totalFields; // 页面大小，即每页记录数
+
+        return pageHandle(idList, pageSize, dataMapper::batchSelectData);
+    }
+
+    // 生成请求参数
     public List<Map<String, String>> getParams() {
         // 总请求数
         int totalRequests = 1000;
@@ -140,6 +170,7 @@ public class DataService {
         return responses;
     }
 
+    // 批量异步请求
     public List<String> batchRequestData(List<? extends Map<String,?>> paramList) {
         String strURL = "http://www.example.com";
         String method = "GET";
@@ -175,6 +206,7 @@ public class DataService {
         return responses;
     }
 
+    // 分页异步请求
     public List<String> pageRequestData(List<? extends Map<String,?>> paramList) {
         int pageSize = 300;
         return pageHandle(paramList, pageSize, this::batchRequestData);
@@ -234,7 +266,7 @@ public class DataService {
     }
 
     // 分页插入或更新
-    public void pageInsertOrUpdateData(List<Data> dataList) throws Exception {
+    public void pageInsertOrUpdateData(List<Data> dataList) {
         int pageDataSize = 12000; // 页面数据量大小，即每页记录数 × 字段数，可自行设置
         int totalFields = Data.class.getDeclaredFields().length; // 总字段数，即数据表中的列数
         int pageSize = pageDataSize / totalFields; // 页面大小，即每页记录数
@@ -248,7 +280,6 @@ public class DataService {
         dataMapper.clearData();
         return ;
     }
-
 
 
 

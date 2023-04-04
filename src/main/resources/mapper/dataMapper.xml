@@ -3,6 +3,21 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.springboot.data.mapper.DataMapper">
 
+    <!-- 依次查询 -->
+    <select id="selectData" parameterType="String" resultType="Data">
+        SELECT * FROM `data_table`
+        WHERE `id` = #{id}
+    </select>
+
+    <!-- 批量查询 -->
+    <select id="batchSelectData" resultType="Data">
+        SELECT * FROM `data_table`
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
     <!-- 依次插入或更新 -->
     <insert id="insertOrUpdateData" parameterType="Data">
         INSERT INTO `data_table` (`id`,`field1`,`field2`)

@@ -7,6 +7,10 @@ import java.util.List;
 
 @Mapper
 public interface DataMapper {
+    // 依次查询
+    public Data selectData(String id);
+    // 批量查询
+    public List<Data> batchSelectData(List<String> idList);
     // 依次插入或更新
     public void insertOrUpdateData(Data data);
     // 批量插入或更新
