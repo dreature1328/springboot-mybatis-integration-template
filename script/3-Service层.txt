@@ -197,12 +197,17 @@
         return responses.stream()
                 .map(JSON::parseObject)
                 .filter(Objects::nonNull)
-                .flatMap(jsonObj -> jsonObj.getJSONArray("data").stream())
-                .map(jsonDetailInfo -> new Data(
-                        ((JSONObject) jsonDetailInfo).getString("id"),
-                        ((JSONObject) jsonDetailInfo).getString("key1"),
-                        ((JSONObject) jsonDetailInfo).getString("key2")
-                ))
+                .flatMap(responseObj -> Optional.ofNullable(responseObj.getJSONArray("data")).orElse(new JSONArray()).stream())
+                .map(dataObj -> {
+                    JSONObject dataJsonObj = (JSONObject) dataObj;
+                    return Optional.ofNullable(dataJsonObj)
+                            .map(obj -> new Data(
+                                obj.getString("id"),
+                                obj.getString("key1"),
+                                obj.getString("key2")
+                            )).orElse(null);
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

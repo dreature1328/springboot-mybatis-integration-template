@@ -89,26 +89,110 @@ text18 = f'''    // 重写 toString 方法
 text2 = f'''
 	@Autowired
 	private {project_name_pascal}Service {project_name}Service;
+  
+  	// 依次查询
+	@ResponseBody
+	@RequestMapping("/{url_name}/select")
+	public HTTPResult select{class_name}(String {primary_attr}) throws Exception {{
+		return HTTPResult.success({project_name}Service.select{class_name}({primary_attr}));
+	}}
+
+	// 批量查询
+	@ResponseBody
+	@RequestMapping("/{url_name}/bselect")
+	public HTTPResult batchSelect{class_name}(String {primary_attr}s) throws Exception {{
+		List<String> {primary_attr}List = Arrays.asList({primary_attr}s.split(","));
+		return HTTPResult.success({project_name}Service.batchSelect{class_name}({primary_attr}List));
+	}}
+
+	// 分页查询
+	@ResponseBody
+	@RequestMapping("/{url_name}/pselect")
+	public HTTPResult pageSelect{class_name}(String {primary_attr}s) throws Exception {{
+		List<String> {primary_attr}List = Arrays.asList({primary_attr}s.split(","));
+		return HTTPResult.success({project_name}Service.batchSelect{class_name}({primary_attr}List));
+	}}
+  
+  	// 获取参数
+	@ResponseBody
+	@RequestMapping("/{url_name}/params")
+	public HTTPResult get{class_name}Params() {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+		return HTTPResult.success(paramsList);
+	}}
+ 
+ 	// 依次同步请求
+	@ResponseBody
+	@RequestMapping("/{url_name}/request")
+	public HTTPResult request{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        List<String> responses = {project_name}Service.request{class_name}(paramsList);
+		return HTTPResult.success(responses);
+	}}
+ 
+ 	// 批量异步请求
+	@ResponseBody
+	@RequestMapping("/{url_name}/brequest")
+	public HTTPResult batchRequest{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        List<String> responses = {project_name}Service.batchRequest{class_name}(paramsList);
+		return HTTPResult.success(responses);
+	}}
+ 
+ 	// 分页异步请求
+	@ResponseBody
+	@RequestMapping("/{url_name}/prequest")
+	public HTTPResult pageRequest{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        List<String> responses = {project_name}Service.pageRequest{class_name}(paramsList);
+		return HTTPResult.success(responses);
+	}}
+ 
+ 	// 传统加工
+	@ResponseBody
+	@RequestMapping("/{url_name}/process")
+	public HTTPResult process{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        List<String> responses = {project_name}Service.request{class_name}(paramsList);
+        List<{class_name}> {object_name}List = {project_name}Service.process{class_name}(responses);
+		return HTTPResult.success({object_name}List);
+	}}
+ 
+  	// 流水线加工
+	@ResponseBody
+	@RequestMapping("/{url_name}/pprocess")
+	public HTTPResult pipelineProcess{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        List<String> responses = {project_name}Service.pageRequest{class_name}(paramsList);
+        List<{class_name}> {object_name}List = {project_name}Service.pielineProcess{class_name}(responses);
+		return HTTPResult.success({object_name}List);
+	}}
  
     // 集成
+    @ResponseBody
     @RequestMapping("/{url_name}/integrate")
-    public void integrate{class_name}() throws Exception {{
-        {project_name}Service.integrate{class_name}({project_name}Service.getParams());
-        return ;
+    public HTTPResult integrate{class_name}() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        {project_name}Service.integrate{class_name}(paramsList);
+        return HTTPResult.success(null);
     }}
 
     // 优化集成
+    @ResponseBody
     @RequestMapping("/{url_name}/integratex")
-    public void integrate{class_name}Optimized() throws Exception {{
-        {project_name}Service.integrate{class_name}Optimized({project_name}Service.getParams());
-        return ;
+    public HTTPResult integrate{class_name}Optimized() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        {project_name}Service.integrate{class_name}Optimized(paramsList);
+        return HTTPResult.success(null);
     }}
     
     // 分页优化集成
+    @ResponseBody
     @RequestMapping("/{url_name}/pintegratex")
-    public void pageIntegrate{class_name}Optimized() throws Exception {{
-        {project_name}Service.pageIntegrate{class_name}Optimized({project_name}Service.getParams());
-        return ;
+    public HTTPResult pageIntegrate{class_name}Optimized() throws Exception {{
+        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+        {project_name}Service.pageIntegrate{class_name}Optimized(paramsList);
+        return HTTPResult.success(null);
     }}
 '''
 # --- Controller 层 ---
@@ -354,7 +438,7 @@ for i in range(json_keys_num):
     text301 += f'''
                             jsonDetailInfo.getString("{json_key}")'''
     text302 += f'''
-                        ((JSONObject) jsonDetailInfo).getString("{json_key}")'''
+                                obj.getString("{json_key}")'''
     text501 += f'`{sql_field}`'
     text502 += f'#{{{java_attr}}}'
     text503 += f'#{{item.{java_attr}}}'
@@ -432,9 +516,14 @@ text3 += f'''
         return responses.stream()
                 .map(JSON::parseObject)
                 .filter(Objects::nonNull)
-                .flatMap(jsonObj -> jsonObj.getJSONArray("data").stream())
-                .map(jsonDetailInfo -> new {class_name}({text302}
-                ))
+                .flatMap(responseObj -> Optional.ofNullable(responseObj.getJSONArray("data")).orElse(new JSONArray()).stream())
+                .map(dataObj -> {{
+                    JSONObject dataJsonObj = (JSONObject) dataObj;
+                    return Optional.ofNullable(dataJsonObj)
+                            .map(obj -> new Data({text302}
+                            )).orElse(null);
+                }})
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }}
 
