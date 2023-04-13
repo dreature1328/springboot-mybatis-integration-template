@@ -169,8 +169,6 @@ public class HTTPUtils {
             strURL = concatParamsToURL(strURL, params);
         }
 
-        System.out.println(strURL);
-
         URL url = new URL(strURL);
         HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
         httpConn.setRequestMethod(method);

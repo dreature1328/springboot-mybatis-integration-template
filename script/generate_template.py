@@ -2,15 +2,45 @@
 from string import Template
 import configparser
 import json
+import os
 from case_converter import *
 
 config = configparser.ConfigParser()
 # 读取配置文件
 with open('config.properties', 'r', encoding='utf-8') as f:
     config.read_file(f)
-# 读取 JSON 文件
-with open('input.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
+    
+# 将参数项存储到字典中，后续替换进字符串中
+params = dict(config.items(config.default_section))
+
+params['delimiter']=params['delimiter'].strip('"')
+
+
+# 读取输入文件
+input_file = params['input_name']
+file_root, file_ext = os.path.splitext(input_file)
+
+if file_ext == '.json':
+    # 读取 JSON 文件
+    with open(input_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+elif file_ext == '.txt':
+    delimiter = params['delimiter']
+    json_key_index = int(params['json_key_index'])
+    json_value_index = int(params['json_value_index'])
+    data = {}
+    # 读取文本文件，每行内容都作为字典的键，字典的值为空
+    with open(input_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            items = line.split(delimiter)
+            key = items[json_key_index]
+            value = items[json_value_index] if json_value_index < len(items) else ''
+            data[key] = value
+else:
+    raise ValueError('不支持的文件类型：{}'.format(file_ext))
 
 # 将参数项存储到字典中，后续替换进字符串中
 params = dict(config.items(config.default_section))
@@ -19,8 +49,8 @@ data_name_camel = to_camel_case(params['data_name'])
 data_name_snake = to_snake_case(params['data_name'])
 
 default_params = {
-    'project_name': data_name_camel,
-    'project_name_pascal': capitalize_first_letter(data_name_camel),
+    'module_name': data_name_camel,
+    'module_name_pascal': capitalize_first_letter(data_name_camel),
     'url_name': data_name_camel,
     'class_name': capitalize_first_letter(data_name_camel),
     'object_name': uncapitalize_first_letter(data_name_camel),
@@ -30,6 +60,7 @@ default_params = {
     'java_attrs': [to_camel_case(key) for key in data.keys()],
     'java_attr_types': ['String' for _ in data.keys()],
     'sql_fields': [to_snake_case(key) for key in data.keys()],
+    'sql_comments': [value for value in data.values()],
     'primary_key' : next(iter(data.keys())),
     'primary_attr' : to_camel_case(next(iter(data.keys()))),
     'primary_attr_type' : 'String',
@@ -42,7 +73,8 @@ if config.has_option('DEFAULT', 'java_attrs'):
     params['java_attrs'] = [v.strip() for v in config.get('DEFAULT', 'java_attrs').split(',')]
 if config.has_option('DEFAULT', 'sql_fields'):
     params['sql_fields'] = [v.strip() for v in config.get('DEFAULT', 'sql_fields').split(',')]
-
+if config.has_option('DEFAULT', 'sql_comments'):
+    params['sql_comments'] = [v.strip() for v in config.get('DEFAULT', 'sql_comments').split(',')]
 
 for key, default_value in default_params.items():
     params.setdefault(key, default_value)
@@ -88,110 +120,98 @@ text18 = f'''    // 重写 toString 方法
 # --- Controller 层 ---
 text2 = f'''
 	@Autowired
-	private {project_name_pascal}Service {project_name}Service;
+	private {module_name_pascal}Service {module_name}Service;
   
   	// 依次查询
-	@ResponseBody
 	@RequestMapping("/{url_name}/select")
 	public HTTPResult select{class_name}(String {primary_attr}) throws Exception {{
-		return HTTPResult.success({project_name}Service.select{class_name}({primary_attr}));
+		return HTTPResult.success({module_name}Service.select{class_name}({primary_attr}));
 	}}
 
 	// 批量查询
-	@ResponseBody
 	@RequestMapping("/{url_name}/bselect")
 	public HTTPResult batchSelect{class_name}(String {primary_attr}s) throws Exception {{
 		List<String> {primary_attr}List = Arrays.asList({primary_attr}s.split(","));
-		return HTTPResult.success({project_name}Service.batchSelect{class_name}({primary_attr}List));
+		return HTTPResult.success({module_name}Service.batchSelect{class_name}({primary_attr}List));
 	}}
 
 	// 分页查询
-	@ResponseBody
 	@RequestMapping("/{url_name}/pselect")
 	public HTTPResult pageSelect{class_name}(String {primary_attr}s) throws Exception {{
 		List<String> {primary_attr}List = Arrays.asList({primary_attr}s.split(","));
-		return HTTPResult.success({project_name}Service.batchSelect{class_name}({primary_attr}List));
+		return HTTPResult.success({module_name}Service.batchSelect{class_name}({primary_attr}List));
 	}}
   
-  	// 获取参数
-	@ResponseBody
+  	// 生成请求参数
 	@RequestMapping("/{url_name}/params")
-	public HTTPResult get{class_name}Params() {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
+	public HTTPResult generate{class_name}Params() {{
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
 		return HTTPResult.success(paramsList);
 	}}
  
  	// 依次同步请求
-	@ResponseBody
 	@RequestMapping("/{url_name}/request")
 	public HTTPResult request{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        List<String> responses = {project_name}Service.request{class_name}(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        List<String> responses = {module_name}Service.request{class_name}(paramsList);
 		return HTTPResult.success(responses);
 	}}
  
  	// 批量异步请求
-	@ResponseBody
 	@RequestMapping("/{url_name}/brequest")
 	public HTTPResult batchRequest{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        List<String> responses = {project_name}Service.batchRequest{class_name}(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        List<String> responses = {module_name}Service.batchRequest{class_name}(paramsList);
 		return HTTPResult.success(responses);
 	}}
  
  	// 分页异步请求
-	@ResponseBody
 	@RequestMapping("/{url_name}/prequest")
 	public HTTPResult pageRequest{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        List<String> responses = {project_name}Service.pageRequest{class_name}(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        List<String> responses = {module_name}Service.pageRequest{class_name}(paramsList);
 		return HTTPResult.success(responses);
 	}}
  
  	// 传统加工
-	@ResponseBody
 	@RequestMapping("/{url_name}/process")
 	public HTTPResult process{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        List<String> responses = {project_name}Service.request{class_name}(paramsList);
-        List<{class_name}> {object_name}List = {project_name}Service.process{class_name}(responses);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        List<String> responses = {module_name}Service.request{class_name}(paramsList);
+        List<{class_name}> {object_name}List = {module_name}Service.process{class_name}(responses);
 		return HTTPResult.success({object_name}List);
 	}}
  
   	// 流水线加工
-	@ResponseBody
 	@RequestMapping("/{url_name}/pprocess")
 	public HTTPResult pipelineProcess{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        List<String> responses = {project_name}Service.pageRequest{class_name}(paramsList);
-        List<{class_name}> {object_name}List = {project_name}Service.pielineProcess{class_name}(responses);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        List<String> responses = {module_name}Service.pageRequest{class_name}(paramsList);
+        List<{class_name}> {object_name}List = {module_name}Service.pielineProcess{class_name}(responses);
 		return HTTPResult.success({object_name}List);
 	}}
  
     // 集成
-    @ResponseBody
     @RequestMapping("/{url_name}/integrate")
     public HTTPResult integrate{class_name}() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        {project_name}Service.integrate{class_name}(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        {module_name}Service.integrate{class_name}(paramsList);
         return HTTPResult.success(null);
     }}
 
     // 优化集成
-    @ResponseBody
     @RequestMapping("/{url_name}/integratex")
     public HTTPResult integrate{class_name}Optimized() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        {project_name}Service.integrate{class_name}Optimized(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        {module_name}Service.integrate{class_name}Optimized(paramsList);
         return HTTPResult.success(null);
     }}
     
     // 分页优化集成
-    @ResponseBody
     @RequestMapping("/{url_name}/pintegratex")
     public HTTPResult pageIntegrate{class_name}Optimized() throws Exception {{
-        List<Map<String, String>> paramsList = {project_name}Service.get{class_name}Params();
-        {project_name}Service.pageIntegrate{class_name}Optimized(paramsList);
+        List<Map<String, String>> paramsList = {module_name}Service.generate{class_name}Params();
+        {module_name}Service.pageIntegrate{class_name}Optimized(paramsList);
         return HTTPResult.success(null);
     }}
 '''
@@ -266,7 +286,7 @@ text3 = f'''
     }}
 
     // 优化集成
-    public void integrate{class_name}Optimized(List<? extends Map<String,?>> paramList) {{
+    public void integrate{class_name}Optimized(List<? extends Map<String,?>> paramList) throws Exception {{
 
         // 异步请求并获取响应内容
         List<String> responses = pageRequest{class_name}(paramList);
@@ -290,7 +310,7 @@ text3 = f'''
     }}
 
     // 生成请求参数
-    public List<Map<String, String>> getParams() {{
+    public List<Map<String, String>> generate{class_name}Params() {{
         // 总请求数
         int totalRequests = 1000;
         // 自己按需求生成自定义参数列表
@@ -403,6 +423,7 @@ for i in range(json_keys_num):
     java_attr_pascal = capitalize_first_letter(java_attr)
     java_attr_type = params['java_attr_types'][i]
     sql_field = params['sql_fields'][i]
+    sql_comment = params['sql_comments'][i]
     
     is_first = is_last = False
     if(i == 0): is_first = True
@@ -454,7 +475,9 @@ for i in range(json_keys_num):
     text506 += f'`{sql_field}` = VALUES(`{sql_field}`)'
     text61 += f'''
     `{sql_field}` VARCHAR(255) DEFAULT NULL'''
-    
+    text62 += f'''
+ALTER TABLE {table_name} MODIFY COLUMN `{sql_field}` VARCHAR(255) comment '{sql_comment}';'''
+
     if(is_last):
         text13 += '''
     )'''
@@ -520,7 +543,7 @@ text3 += f'''
                 .map(dataObj -> {{
                     JSONObject dataJsonObj = (JSONObject) dataObj;
                     return Optional.ofNullable(dataJsonObj)
-                            .map(obj -> new Data({text302}
+                            .map(obj -> new {class_name}({text302}
                             )).orElse(null);
                 }})
                 .filter(Objects::nonNull)
@@ -530,7 +553,7 @@ text3 += f'''
     // 依次插入或更新
     public void insertOrUpdate{class_name}(List<{class_name}> {object_name}List) {{
         for({class_name} {object_name} : {object_name}List) {{
-            {project_name}Mapper.insertOrUpdate{class_name}({object_name});
+            {module_name}Mapper.insertOrUpdate{class_name}({object_name});
         }}
         return ;
     }}
@@ -541,13 +564,13 @@ text3 += f'''
         int totalFields = {class_name}.class.getDeclaredFields().length; // 总字段数，即数据表中的列数
         int pageSize = pageDataSize / totalFields; // 页面大小，即每页记录数
 
-        pageHandle({object_name}List, pageSize, {project_name}Mapper::batchInsertOrUpdate{class_name});
+        pageHandle({object_name}List, pageSize, {module_name}Mapper::batchInsertOrUpdate{class_name});
         return ;
     }}
 
     // 清空
     public void clear{class_name}() {{
-        {project_name}Mapper.clear{class_name}();
+        {module_name}Mapper.clear{class_name}();
         return ;
     }}
 
@@ -636,9 +659,18 @@ with open(params['output_name_5'],"w",encoding='utf-8') as f:
     f.flush() # 写入硬盘            
     f.close() # 关闭文件
 
-with open(params['output_name_6'],"w",encoding='utf-8') as f:
-    f.write(''.join([
-        text61,
-    ]))
-    f.flush() # 写入硬盘            
-    f.close() # 关闭文件
+if(params['add_comment'] == 'true'):
+    with open(params['output_name_6'],"w",encoding='utf-8') as f:
+        f.write('\n'.join([
+            text61,
+            text62
+        ]))
+        f.flush() # 写入硬盘            
+        f.close() # 关闭文件
+else:
+    with open(params['output_name_6'],"w",encoding='utf-8') as f:
+        f.write(''.join([
+            text61
+        ]))
+        f.flush() # 写入硬盘            
+        f.close() # 关闭文件

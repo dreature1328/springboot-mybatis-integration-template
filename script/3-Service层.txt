@@ -62,7 +62,7 @@
     }
 
     // 优化集成
-    public void integrateDataOptimized(List<? extends Map<String,?>> paramList) {
+    public void integrateDataOptimized(List<? extends Map<String,?>> paramList) throws Exception {
 
         // 异步请求并获取响应内容
         List<String> responses = pageRequestData(paramList);
@@ -86,7 +86,7 @@
     }
 
     // 生成请求参数
-    public List<Map<String, String>> getParams() {
+    public List<Map<String, String>> generateDataParams() {
         // 总请求数
         int totalRequests = 1000;
         // 自己按需求生成自定义参数列表

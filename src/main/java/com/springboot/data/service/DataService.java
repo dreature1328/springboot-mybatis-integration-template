@@ -135,7 +135,7 @@ public class DataService {
     }
 
     // 生成请求参数
-    public List<Map<String, String>> getDataParams() {
+    public List<Map<String, String>> generateDataParams() {
         // 总请求数
         int totalRequests = 1000;
         // 自己按需求生成自定义参数列表

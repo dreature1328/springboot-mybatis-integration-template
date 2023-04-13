@@ -20,7 +20,7 @@ public class StarterDataCenter {
 //	private DataService dataService;
 //  // 此处的 cron 表达式意为每 30 分钟执行一次任务
 //	@Scheduled(cron ="0 */30 * * * ?")
-//	public void migrateDataOptimizedOnSchedule() throws Exception {
+//	public void performTaskOnSchedule() throws Exception {
 //		dataService.pageMigrateDataOptimized(dataService.getParams());
 //	}
 }
