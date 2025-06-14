@@ -1,7 +1,0 @@
-
-    // 依次插入或更新
-    public void insertOrUpdateData(Data data);
-    // 批量插入或更新
-    public void batchInsertOrUpdateData(List<Data> dataList);
-    // 清空
-    public void clearData();
