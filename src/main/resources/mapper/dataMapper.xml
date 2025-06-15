@@ -28,21 +28,28 @@
         FROM <include refid="table"/>
     </select>
 
+    <!-- 查询全表 -->
+    <select id="findAll" resultMap="dataMap">
+        SELECT *
+        FROM
+        <include refid="table"/>
+    </select>
+
     <!-- 查询 n 条 -->
-    <select id="findTopN" parameterType="Integer" resultMap="dataMap">
+    <select id="findRandomN" parameterType="Integer" resultMap="dataMap">
         SELECT *
         FROM <include refid="table"/>
         LIMIT #{n}
     </select>
 
-    <!-- 依次查询 -->
+    <!-- 单项查询 -->
     <select id="selectById" parameterType="String" resultMap="dataMap">
         SELECT <include refid="columns"/>
         FROM <include refid="table"/>
         WHERE `id` = #{id}
     </select>
 
-    <!-- 批量查询 -->
+    <!-- 单批查询 -->
     <select id="selectBatchByIds" resultMap="dataMap">
         SELECT <include refid="columns"/>
         FROM <include refid="table"/>
@@ -52,14 +59,14 @@
         </foreach>
     </select>
 
-    <!-- 依次插入 -->
+    <!-- 单项插入 -->
     <insert id="insert" parameterType="Data">
         INSERT INTO <include refid="table"/>
         (<include refid="columns"/>)
         VALUES (<include refid="values"/>)
     </insert>
 
-    <!-- 批量插入 -->
+    <!-- 单批插入 -->
     <insert id="insertBatch" parameterType="java.util.List">
         INSERT INTO <include refid="table"/>
         (<include refid="columns"/>)
@@ -69,14 +76,14 @@
         </foreach>
     </insert>
 
-    <!-- 依次更新 -->
+    <!-- 单项更新 -->
     <update id="update" parameterType="Data">
         UPDATE <include refid="table"/>
         SET <include refid="set"/>
         WHERE `id` = #{id}
     </update>
 
-    <!-- 批量更新 -->
+    <!-- 单批更新 -->
     <update id="updateBatch" parameterType="java.util.List">
         UPDATE <include refid="table"/>
         <trim prefix="SET" suffixOverrides=",">
@@ -103,7 +110,7 @@
         </foreach>
     </update>
 
-    <!-- 依次插入或更新 -->
+    <!-- 单项插入或更新 -->
     <insert id="upsert" parameterType="Data">
         INSERT INTO <include refid="table"/>
         (<include refid="columns"/>)
@@ -112,7 +119,7 @@
         <include refid="conflictSet"/>
     </insert>
 
-    <!-- 批量插入或更新 -->
+    <!-- 单批插入或更新 -->
     <insert id="upsertBatch" parameterType="java.util.List">
         INSERT INTO <include refid="table"/>
         (<include refid="columns"/>)
@@ -124,13 +131,13 @@
         <include refid="conflictSet"/>
     </insert>
 
-    <!-- 依次删除 -->
+    <!-- 单项删除 -->
     <delete id="deleteById" parameterType="String">
         DELETE FROM <include refid="table"/>
         WHERE `id` = #{id}
     </delete>
 
-    <!-- 批量删除 -->
+    <!-- 单批删除 -->
     <delete id="deleteBatchByIds" parameterType="java.util.List">
         DELETE FROM <include refid="table"/>
         WHERE `id` IN

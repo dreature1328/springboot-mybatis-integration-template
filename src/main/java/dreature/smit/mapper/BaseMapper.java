@@ -5,29 +5,43 @@ import java.util.List;
 public interface BaseMapper<T> {
     // 查询总数
     public int countAll();
-    // 查询 n 条
-    List<T> findTopN(int n);
-    // 依次查询
+
+    // 查询全表
+    List<T> findAll();
+
+    // 查询 count 条
+    List<T> findRandomN(int count);
+
+    // 单项查询
     public List<T> selectById(String id);
-    // 批量查询
+
+    // 单批查询
     public List<T> selectBatchByIds(List<String> ids);
-    // 依次插入
+
+    // 单项插入
     public int insert(T obj);
-    // 批量插入
+
+    // 单批插入
     public int insertBatch(List<T> list);
-    // 依次更新
+
+    // 单项更新
     public int update(T obj);
-    // 批量更新
+
+    // 单批更新
     public int updateBatch(List<T> list);
-    // 依次插入或更新
+
+    // 单项插入或更新
     public int upsert(T obj);
-    // 批量插入或更新
+
+    // 单批插入或更新
     public int upsertBatch(List<T> list);
-    // 依次删除
+
+    // 单项删除
     public int deleteById(String id);
-    // 批量删除
+
+    // 单批删除
     public int deleteBatchByIds(List<String> ids);
+
     // 清空
     public void truncate();
-
 }

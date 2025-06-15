@@ -15,6 +15,6 @@ public class TaskConfig {
     // 此处的 cron 表达式意为每 30 分钟执行一次任务
     @Scheduled(cron ="0 */30 * * * ?")
     public void performTaskOnSchedule() {
-        dataService.integratePageOptimized(dataService.generateParams(1000));
+        dataService.integrateBatchOptimized(dataService.generateParams(1000), 200, 200, 1000);
     }
 }

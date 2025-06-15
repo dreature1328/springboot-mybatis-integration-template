@@ -38,10 +38,21 @@ import static dreature.smit.common.util.XmlUtils.readXmlFile;
 public class DataServiceImpl extends BaseServiceImpl<Data> implements DataService {
     @Autowired
     private DataMapper dataMapper;
+    // 请求 URL 及方法
+    private static String baseUrl = "http://www.example.com";
+    private static String method = "GET";
+    // 请求头
+    private static String headerKey = "key";
+    private static String headerValue = "abcdefg";
+    private static Map<String, String> headers = HttpUtils.getDefaultHeaders();
+
+    static {
+        headers.put(headerKey, headerValue);
+    }
 
     // ----- 数据集成 -----
-    // 集成
-    public IntegrationStats integrate(List<? extends Map<String,?>> paramsList) {
+    // 集成（依次同步请求 + 逐项转换 + 逐项持久化）
+    public IntegrationStats integrate(List<? extends Map<String, ?>> paramsList) {
         IntegrationStats stats = new IntegrationStats();
 
         stats.markStart();
@@ -53,12 +64,12 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         stats.markRequestEnd();
         stats.recordResponses(responses.size());
 
-        // 依次转换数据，将响应内容转换成对象列表
+        // 逐项转换，将响应内容转换成对象列表
         List<Data> dataList = mapEach(responses, this::transform);
         stats.markTransformEnd();
         stats.recordEntities(dataList.size());
 
-        // 将对象依次插入或更新进数据库
+        // 逐项插入或更新进数据库
         int affectedRows = reduceEach(dataList, dataMapper::upsert);
         stats.markPersistEnd();
         stats.recordAffectedRows(affectedRows);
@@ -66,15 +77,15 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         return stats;
     }
 
-    // 优化集成
-    public List<IntegrationStats> integrateOptimized(List<? extends Map<String,?>> paramsList) {
+    // 优化集成（分批异步请求 + 流水线转换 + 分批持久化）
+    public List<IntegrationStats> integrateOptimized(List<? extends Map<String, ?>> paramsList, int reqBatchSize, int persistBatchSize) {
         List statsList = new ArrayList<>();
         IntegrationStats stats = new IntegrationStats();
 
         stats.markStart();
         stats.recordRequests(paramsList.size());
-        // 分页异步请求并获取响应内容
-//        List<String> responses = requestPage(paramsList); // 实际请求
+        // 分批异步请求并获取响应内容
+//        List<String> responses = requestBatch(paramsList, reqBatchSize); // 实际请求
         List<String> responses = generateResponses(paramsList.size()); // 测试用
         stats.markRequestEnd();
         stats.recordResponses(responses.size());
@@ -84,8 +95,8 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         stats.markTransformEnd();
         stats.recordEntities(dataList.size());
 
-        // 将对象分页插入或更新进数据库
-        int affectedRows = upsertPage(dataList);
+        // 分批插入或更新进数据库
+        int affectedRows = upsertBatch(dataList, persistBatchSize);
         stats.markPersistEnd();
         stats.recordAffectedRows(affectedRows);
 
@@ -93,10 +104,21 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         return statsList;
     }
 
-    // 分页优化集成
-    public List<IntegrationStats> integratePageOptimized(List<? extends Map<String,?>> paramsList){
-        int pageSize = 300;
-        List<IntegrationStats> result = mapPage(paramsList, pageSize, this::integrateOptimized);
+    // 分批优化集成
+    public List<IntegrationStats> integrateBatchOptimized(
+            List<? extends Map<String, ?>> paramsList,
+            int intBatchSize,
+            int reqBatchSize,
+            int persistBatchSize) {
+        List<IntegrationStats> result = mapBatch(
+                paramsList,
+                intBatchSize,
+                batch -> integrateOptimized(
+                        batch,
+                        reqBatchSize,
+                        persistBatchSize
+                )
+        );
         return result;
     }
 
@@ -110,7 +132,7 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         int length = 16;
 
         StringBuilder sb = new StringBuilder(length);
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             String id = UUID.randomUUID().toString();
 
             sb.setLength(0);
@@ -179,14 +201,6 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         return dataList;
     }
 
-    // 添加请求头（测试用）
-    private static Map<String, String> headers = HttpUtils.getDefaultHeaders();
-    static {
-        final String key = "key";
-        final String value = "abcdefg";
-        headers.put(key, value);
-    }
-
     // 生成请求参数（测试用）
     public List<Map<String, String>> generateParams(int count) {
         // 此处以一年中每一天的时间切片为例
@@ -202,23 +216,23 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
     }
 
     // 单次请求
-    public String request(Map<String, ?> params) {
-        String baseUrl = "http://www.example.com";
-        String method = "GET";
-        String response = null;
+    public List<String> request(Map<String, ?> params) {
+        List<String> responses = new ArrayList<>();
         try {
-            response = sendHttpRequest(baseUrl, method, headers, params);
-        }
-        catch (Exception e) {
+            responses.add(sendHttpRequest(baseUrl, method, headers, params));
+        } catch (Exception e) {
             System.err.println("请求失败: " + e.getMessage());
         }
-        return response;
+        return responses;
     }
 
-    // 批量异步请求
-    public List<String> requestBatch(List<? extends Map<String,?>> paramsList) {
-        String baseUrl = "http://www.example.com";
-        String method = "GET";
+    // 依次请求
+    public List<String> request(Map<String, ?>... paramsArray) {
+        return mapEach(new ArrayList<>(Arrays.asList(paramsArray)), this::request);
+    }
+
+    // 单批异步请求
+    public List<String> requestBatch(List<? extends Map<String, ?>> paramsList) {
         List<CompletableFuture<String>> futures = new ArrayList<>();
 
         // 添加异步请求任务
@@ -251,10 +265,9 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         return responses;
     }
 
-    // 分页异步请求
-    public List<String> requestPage(List<? extends Map<String,?>> paramsList) {
-        int pageSize = 300;
-        return mapPage(paramsList, pageSize, this::requestBatch);
+    // 分批异步请求
+    public List<String> requestBatch(List<? extends Map<String, ?>> paramsList, int batchSize) {
+        return mapBatch(paramsList, batchSize, this::requestBatch);
     }
 
     // 生成响应内容（测试用）
@@ -306,28 +319,34 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
 
         return responses;
     }
+
     // ----- 数据转换 -----
     // 单项转换
-    public Data transform(String response) {
-        Data data = null;
+    public List<Data> transform(String response) {
+        List<Data> result = new ArrayList<>();
         try {
             JsonNode rootNode = objectMapper.readTree(response);
             JsonNode arrayNode = rootNode.path("data");
 
             if (arrayNode.isArray()) {
                 for (JsonNode jsonNode : arrayNode) {
-                    data = new Data(
+                    result.add(new Data(
                             jsonNode.path("id").asText(),
                             jsonNode.path("key1").asText(),
                             jsonNode.path("key2").asText()
-                    );
+                    ));
                 }
             }
         } catch (JsonProcessingException e) {
             System.err.println("JSON 处理异常: " + e.getMessage());
         }
 
-        return data;
+        return result;
+    }
+
+    // 逐项转换
+    public List<Data> transform(String... responses) {
+        return mapEach(new ArrayList<>(Arrays.asList(responses)), this::transform);
     }
 
     // 流水线转换
@@ -350,60 +369,48 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
     }
 
     // ----- 数据持久化 -----
-    // 计算页面大小
-    public int calculatePageSize(Class<?> clazz) {
-        int cells = 12000; // 每页单元格数，即行数 × 列数
-        int fields = clazz.getDeclaredFields().length; // 列数
-        int pageSize = cells / fields; // 页面大小，即每页行数
-        return pageSize;
-    }
-
     // 查询总数
     public int countAll() {
         return dataMapper.countAll();
-    };
+    }
+
+    // 查询全表
+    public List<Data> findAll() {
+        return dataMapper.findAll();
+    }
 
     // 查询 n 条
-    public List<Data> findTopN(int n) {
-        return dataMapper.findTopN(n);
+    public List<Data> findRandomN(int count) {
+        return dataMapper.findRandomN(count);
     }
 
-    // 分页查询
-    public List<Data> selectPageByIds(List<String> ids) {
-        int pageSize = calculatePageSize(Data.class);
-        return mapPage(ids, pageSize, dataMapper::selectBatchByIds);
-    }
-    // 分页插入
-    public int insertPage(List<Data> dataList) {
-        int pageSize = calculatePageSize(Data.class);
-        int affectedRows = reducePage(dataList, pageSize, dataMapper::insertBatch);
-        return affectedRows;
+    // 分批查询
+    public List<Data> selectBatchByIds(List<String> ids, int batchSize) {
+        return mapBatch(ids, batchSize, dataMapper::selectBatchByIds);
     }
 
-    // 分页更新
-    public int updatePage(List<Data> dataList) {
-        int pageSize = calculatePageSize(Data.class);
-        int affectedRows = reducePage(dataList, pageSize, dataMapper::updateBatch);
-        return affectedRows;
+    // 分批插入
+    public int insertBatch(List<Data> dataList, int batchSize) {
+        return reduceBatch(dataList, batchSize, dataMapper::insertBatch);
     }
 
-    // 分页插入或更新
-    public int upsertPage(List<Data> dataList) {
-        int pageSize = calculatePageSize(Data.class);
-        int affectedRows = reducePage(dataList, pageSize, dataMapper::upsertBatch);
-        return affectedRows;
+    // 分批更新
+    public int updateBatch(List<Data> dataList, int batchSize) {
+        return reduceBatch(dataList, batchSize, dataMapper::updateBatch);
     }
 
-    // 分页删除
-    public int deletePageByIds(List<String> ids) {
-        int pageSize = calculatePageSize(Data.class);
-        int affectedRows = reducePage(ids, pageSize, dataMapper::deleteBatchByIds);
-        return affectedRows;
+    // 分批插入或更新
+    public int upsertBatch(List<Data> dataList, int batchSize) {
+        return reduceBatch(dataList, batchSize, dataMapper::upsertBatch);
+    }
+
+    // 分批删除
+    public int deleteBatchByIds(List<String> ids, int batchSize) {
+        return reduceBatch(ids, batchSize, dataMapper::deleteBatchByIds);
     }
 
     // 清空
-    public void truncate(){
+    public void truncate() {
         dataMapper.truncate();
-        return ;
     }
 }
