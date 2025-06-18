@@ -1,20 +1,17 @@
 package dreature.smit.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import dreature.smit.common.stats.IntegrationStats;
 import dreature.smit.common.util.HttpUtils;
-import dreature.smit.common.util.JsonUtils;
 import dreature.smit.entity.Data;
-import dreature.smit.mapper.DataMapper;
-import dreature.smit.service.DataService;
-import org.springframework.beans.factory.annotation.Autowired;
+import dreature.smit.service.ExtractService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -25,104 +22,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import static dreature.smit.common.util.BatchUtils.*;
+import static dreature.smit.common.util.BatchUtils.mapBatch;
+import static dreature.smit.common.util.BatchUtils.mapEach;
 import static dreature.smit.common.util.HttpUtils.sendAsyncHttpRequest;
 import static dreature.smit.common.util.HttpUtils.sendHttpRequest;
 import static dreature.smit.common.util.XmlUtils.readXmlFile;
 
 @Service
-public class DataServiceImpl extends BaseServiceImpl<Data> implements DataService {
-    @Autowired
-    private DataMapper dataMapper;
-    // 请求 URL 及方法
-    private static String baseUrl = "http://www.example.com";
-    private static String method = "GET";
-    // 请求头
-    private static String headerKey = "key";
-    private static String headerValue = "abcdefg";
-    private static Map<String, String> headers = HttpUtils.getDefaultHeaders();
-
-    static {
-        headers.put(headerKey, headerValue);
-    }
-
-    // ----- 数据集成 -----
-    // 集成（依次同步请求 + 逐项转换 + 逐项持久化）
-    public IntegrationStats integrate(List<? extends Map<String, ?>> paramsList) {
-        IntegrationStats stats = new IntegrationStats();
-
-        stats.markStart();
-        stats.recordRequests(paramsList.size());
-
-        // 同步请求并获取响应内容
-//        List<String> responses = mapEach(paramsList, this::request); // 实际请求
-        List<String> responses = generateResponses(paramsList.size()); // 测试用
-        stats.markRequestEnd();
-        stats.recordResponses(responses.size());
-
-        // 逐项转换，将响应内容转换成对象列表
-        List<Data> dataList = mapEach(responses, this::transform);
-        stats.markTransformEnd();
-        stats.recordEntities(dataList.size());
-
-        // 逐项插入或更新进数据库
-        int affectedRows = reduceEach(dataList, dataMapper::upsert);
-        stats.markPersistEnd();
-        stats.recordAffectedRows(affectedRows);
-
-        return stats;
-    }
-
-    // 优化集成（分批异步请求 + 流水线转换 + 分批持久化）
-    public List<IntegrationStats> integrateOptimized(List<? extends Map<String, ?>> paramsList, int reqBatchSize, int persistBatchSize) {
-        List statsList = new ArrayList<>();
-        IntegrationStats stats = new IntegrationStats();
-
-        stats.markStart();
-        stats.recordRequests(paramsList.size());
-        // 分批异步请求并获取响应内容
-//        List<String> responses = requestBatch(paramsList, reqBatchSize); // 实际请求
-        List<String> responses = generateResponses(paramsList.size()); // 测试用
-        stats.markRequestEnd();
-        stats.recordResponses(responses.size());
-
-        // 流水线转换数据，将响应内容转换成对象列表
-        List<Data> dataList = transformPipeline(responses);
-        stats.markTransformEnd();
-        stats.recordEntities(dataList.size());
-
-        // 分批插入或更新进数据库
-        int affectedRows = upsertBatch(dataList, persistBatchSize);
-        stats.markPersistEnd();
-        stats.recordAffectedRows(affectedRows);
-
-        statsList.add(stats);
-        return statsList;
-    }
-
-    // 分批优化集成
-    public List<IntegrationStats> integrateBatchOptimized(
-            List<? extends Map<String, ?>> paramsList,
-            int intBatchSize,
-            int reqBatchSize,
-            int persistBatchSize) {
-        List<IntegrationStats> result = mapBatch(
-                paramsList,
-                intBatchSize,
-                batch -> integrateOptimized(
-                        batch,
-                        reqBatchSize,
-                        persistBatchSize
-                )
-        );
-        return result;
-    }
-
-    // ----- 数据获取 -----
+public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements ExtractService<Data> {
+    // ----- 文件提取 -----
     // 生成数据（测试用）
     public List<Data> generate(int count) {
         // 此处以 UUID 作为 ID，长度为 16 的随机字符串作为属性值为例
@@ -199,6 +108,28 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
             }
         }
         return dataList;
+    }
+
+    // ----- API 提取 -----
+    // 请求 URL、方法、头
+    @Value("${api.baseUrl}")
+    private String baseUrl;
+
+    @Value("${api.method}")
+    private String method;
+
+    private Map<String, String> headers;
+
+    @Value("${api.header.key}")
+    private String headerKey;
+
+    @Value("${api.header.value}")
+    private String headerValue;
+
+    @PostConstruct
+    public void init() {
+        headers = HttpUtils.getDefaultHeaders(); // 获取默认请求头
+        headers.put(headerKey, headerValue);    // 添加自定义请求头
     }
 
     // 生成请求参数（测试用）
@@ -320,97 +251,25 @@ public class DataServiceImpl extends BaseServiceImpl<Data> implements DataServic
         return responses;
     }
 
-    // ----- 数据转换 -----
-    // 单项转换
-    public List<Data> transform(String response) {
-        List<Data> result = new ArrayList<>();
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-            JsonNode arrayNode = rootNode.path("data");
-
-            if (arrayNode.isArray()) {
-                for (JsonNode jsonNode : arrayNode) {
-                    result.add(new Data(
-                            jsonNode.path("id").asText(),
-                            jsonNode.path("key1").asText(),
-                            jsonNode.path("key2").asText()
-                    ));
-                }
-            }
-        } catch (JsonProcessingException e) {
-            System.err.println("JSON 处理异常: " + e.getMessage());
-        }
-
-        return result;
-    }
-
-    // 逐项转换
-    public List<Data> transform(String... responses) {
-        return mapEach(new ArrayList<>(Arrays.asList(responses)), this::transform);
-    }
-
-    // 流水线转换
-    public List<Data> transformPipeline(List<String> responses) {
-        return responses.stream()
-                .map(JsonUtils::stringToJsonNode)
-                .filter(Objects::nonNull)
-                .flatMap(jsonObj -> {
-                    JsonNode arrayNode = jsonObj.path("data");
-                    return arrayNode.isArray()
-                            ? StreamSupport.stream(arrayNode.spliterator(), false)
-                            : Stream.empty();
-                })
-                .map(jsonNode -> new Data(
-                        jsonNode.path("id").asText(),
-                        jsonNode.path("key1").asText(),
-                        jsonNode.path("key2").asText()
-                ))
-                .collect(Collectors.toList());
-    }
-
-    // ----- 数据持久化 -----
+    // ----- 数据库提取 -----
     // 查询总数
     public int countAll() {
-        return dataMapper.countAll();
+        return baseMapper.countAll();
     }
 
     // 查询全表
     public List<Data> findAll() {
-        return dataMapper.findAll();
+        return baseMapper.findAll();
     }
 
     // 查询 n 条
     public List<Data> findRandomN(int count) {
-        return dataMapper.findRandomN(count);
+        return baseMapper.findRandomN(count);
     }
 
     // 分批查询
     public List<Data> selectBatchByIds(List<String> ids, int batchSize) {
-        return mapBatch(ids, batchSize, dataMapper::selectBatchByIds);
+        return mapBatch(ids, batchSize, baseMapper::selectBatchByIds);
     }
 
-    // 分批插入
-    public int insertBatch(List<Data> dataList, int batchSize) {
-        return reduceBatch(dataList, batchSize, dataMapper::insertBatch);
-    }
-
-    // 分批更新
-    public int updateBatch(List<Data> dataList, int batchSize) {
-        return reduceBatch(dataList, batchSize, dataMapper::updateBatch);
-    }
-
-    // 分批插入或更新
-    public int upsertBatch(List<Data> dataList, int batchSize) {
-        return reduceBatch(dataList, batchSize, dataMapper::upsertBatch);
-    }
-
-    // 分批删除
-    public int deleteBatchByIds(List<String> ids, int batchSize) {
-        return reduceBatch(ids, batchSize, dataMapper::deleteBatchByIds);
-    }
-
-    // 清空
-    public void truncate() {
-        dataMapper.truncate();
-    }
 }

@@ -34,6 +34,7 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> error(String code, String message) {
         return new Result<>(false, code, message, null);
     }
+
     // 基础方法
     public boolean isSuccess() {
         return success;
