@@ -4,66 +4,67 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class IntegrationStats {
     // ----- 时间点指标（毫秒级） -----
-    private long startTime;
-    private long requestEndTime;
-    private long transformEndTime;
-    private long persistEndTime;
+    private long extractStartTime;      // 数据抽取开始时间
+    private long extractEndTime;        // 数据抽取结束时间
+    private long transformEndTime;      // 数据转换结束时间
+    private long loadEndTime;           // 数据加载结束时间
 
     //  ----- 计数指标（线程安全） -----
-    private final AtomicInteger requests = new AtomicInteger(0);
-    private final AtomicInteger responses = new AtomicInteger(0);
-    private final AtomicInteger entities = new AtomicInteger(0);
-    private final AtomicInteger affectedRows = new AtomicInteger(0);
-    private final AtomicInteger errors = new AtomicInteger(0);
+    private final AtomicInteger sourceUnits = new AtomicInteger(0);      // 源数据单元数（消息/记录/文件等）
+    private final AtomicInteger extractedItems = new AtomicInteger(0);   // 已抽取数据项数
+    private final AtomicInteger transformedItems = new AtomicInteger(0); // 成功转换数据项数
+    private final AtomicInteger loadedItems = new AtomicInteger(0);      // 成功加载数据项数
+    private final AtomicInteger errors = new AtomicInteger(0);           // 错误计数
 
-    // ----- 时间点操作 -----
-    public void markStart() {
-        startTime = System.currentTimeMillis();
+    // ----- 时间点标记 -----
+    public void markExtractStart() {
+        extractStartTime = System.currentTimeMillis();
     }
 
-    public void markRequestEnd() {
-        requestEndTime = System.currentTimeMillis();
+    public void markExtractEnd() {
+        extractEndTime = System.currentTimeMillis();
     }
 
     public void markTransformEnd() {
         transformEndTime = System.currentTimeMillis();
     }
 
-    public void markPersistEnd() {
-        persistEndTime = System.currentTimeMillis();
+    public void markLoadEnd() {
+        loadEndTime = System.currentTimeMillis();
     }
 
-    public long getRequestDuration() {
-        return requestEndTime - startTime;
+    // ----- 时间间隔计算 -----
+    public long getExtractDuration() {
+        return extractEndTime - extractStartTime;
     }
 
     public long getTransformDuration() {
-        return transformEndTime - requestEndTime;
+        return transformEndTime - extractEndTime;
     }
 
-    public long getPersistDuration() {
-        return persistEndTime - transformEndTime;
+    public long getLoadDuration() {
+        return loadEndTime - transformEndTime;
     }
 
     public long getTotalDuration() {
-        return persistEndTime - startTime;
+        return loadEndTime - extractStartTime;
     }
 
     // ----- 计数操作 -----
-    public void recordRequests(int count) {
-        requests.addAndGet(count);
+    public void recordSourceUnits(int count) {
+        sourceUnits.addAndGet(count);
     }
 
-    public void recordResponses(int count) {
-        responses.addAndGet(count);
+    public void recordExtractedItems(int count) {
+        extractedItems.addAndGet(count);
     }
 
-    public void recordEntities(int count) {
-        entities.addAndGet(count);
+    public void recordTransformedItems(int count) {
+        transformedItems.addAndGet(count);
     }
 
-    public void recordAffectedRows(int count) {
-        affectedRows.addAndGet(count);
+    public void recordLoadedItems(int count) {
+        loadedItems.addAndGet(count);
     }
 
     public void recordError() {
@@ -74,45 +75,46 @@ public class IntegrationStats {
         errors.addAndGet(count);
     }
 
-    // ------ 成功率计算 -----
-    public double getResponseRate() {
-        int reqs = requests.get();
-        return reqs > 0 ? (responses.get() * 100.0) / reqs : 0.0;
+    // ------ 统计指标计算 -----
+    public double getExtractionYield() {
+        int units = sourceUnits.get();
+        return units > 0 ? (extractedItems.get() * 100.0) / units : 0.0;
     }
 
-    public double getTransformationRate() {
-        int resps = responses.get();
-        return resps > 0 ? (entities.get() * 100.0) / resps : 0.0;
+    public double getTransformationYield() {
+        int extracted = extractedItems.get();
+        return extracted > 0 ? (transformedItems.get() * 100.0) / extracted : 0.0;
     }
 
-    public double getPersistenceRate() {
-        int objs = entities.get();
-        return objs > 0 ? (affectedRows.get() * 100.0) / objs : 0.0;
+    public double getLoadingYield() {
+        int transformed = transformedItems.get();
+        return transformed > 0 ? (loadedItems.get() * 100.0) / transformed : 0.0;
     }
 
-    public double getOverallSuccessRate() {
-        int reqs = requests.get();
-        return reqs > 0 ? (affectedRows.get() * 100.0) / reqs : 0.0;
+    public double getOverallYield() {
+        int units = sourceUnits.get();
+        return units > 0 ? (loadedItems.get() * 100.0) / units : 0.0;
     }
 
     public double getErrorRate() {
-        int reqs = requests.get();
-        return reqs > 0 ? (errors.get() * 100.0) / reqs : 0.0;
+        int units = sourceUnits.get();
+        return units > 0 ? (errors.get() * 100.0) / units : 0.0;
     }
 
+    // ----- 统计报告生成 -----
     public String generateReport() {
         return String.format(
-                "集成完毕(%.2f%%)[%.1fs] | " +
-                "请求:%d | " +
-                "响应:%d(%.2f%%)[%.1fs] | " +
-                "转换:%d(%.2f%%)[%.1fs] | " +
-                "入库:%d(%.2f%%)[%.1fs] | " +
-                "错误:%d(%.2f%%)",
-                getOverallSuccessRate(), getTotalDuration() / 1000.0,
-                requests.get(),
-                responses.get(), getResponseRate(), getRequestDuration() / 1000.0,
-                entities.get(), getTransformationRate(), getTransformDuration() / 1000.0,
-                affectedRows.get(), getPersistenceRate(), getPersistDuration() / 1000.0,
+                "集成(%.2f%%)[%.1fs] | " +
+                        "源单元:%d | " +
+                        "抽取:%d(%.2f%%)[%.1fs] | " +
+                        "转换:%d(%.2f%%)[%.1fs] | " +
+                        "加载:%d(%.2f%%)[%.1fs] | " +
+                        "错误:%d(%.2f%%) | ",
+                getOverallYield(), getTotalDuration() / 1000.0,
+                sourceUnits.get(),
+                extractedItems.get(), getExtractionYield(), getExtractDuration() / 1000.0,
+                transformedItems.get(), getTransformationYield(), getTransformDuration() / 1000.0,
+                loadedItems.get(), getLoadingYield(), getLoadDuration() / 1000.0,
                 errors.get(), getErrorRate()
         );
     }

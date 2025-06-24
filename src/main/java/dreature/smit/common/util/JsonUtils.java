@@ -42,6 +42,14 @@ public class JsonUtils {
                 .build();
     }
 
+    public static JsonNode parseFile(String filePath) {
+        try {
+            return DEFAULT_MAPPER.readTree(new File(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public static String objectToJson(Object object) {
         if (object == null) return null;

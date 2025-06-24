@@ -1,18 +1,20 @@
 package dreature.smit.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import dreature.smit.common.util.BatchUtils;
 import dreature.smit.common.util.HttpUtils;
+import dreature.smit.common.util.JsonUtils;
+import dreature.smit.common.util.MqUtils;
 import dreature.smit.entity.Data;
 import dreature.smit.service.ExtractService;
+import dreature.smit.service.TransformService;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -23,94 +25,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static dreature.smit.common.util.BatchUtils.mapBatch;
-import static dreature.smit.common.util.BatchUtils.mapEach;
-import static dreature.smit.common.util.HttpUtils.sendAsyncHttpRequest;
-import static dreature.smit.common.util.HttpUtils.sendHttpRequest;
-import static dreature.smit.common.util.XmlUtils.readXmlFile;
 
 @Service
 public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements ExtractService<Data> {
-    // ----- 文件提取 -----
-    // 生成数据（测试用）
-    public List<Data> generate(int count) {
-        // 此处以 UUID 作为 ID，长度为 16 的随机字符串作为属性值为例
-        List<Data> dataList = new ArrayList<>(count);
-        String CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        SecureRandom random = new SecureRandom();
-        int length = 16;
+    @Autowired
+    TransformService<Data> transformService;
 
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < count; i++) {
-            String id = UUID.randomUUID().toString();
-
-            sb.setLength(0);
-            for (int j = 0; j < length; j++) {
-                sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
-            }
-            String attr1 = sb.toString();
-
-            sb.setLength(0);
-            for (int j = 0; j < length; j++) {
-                sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
-            }
-            String attr2 = sb.toString();
-
-            dataList.add(new Data(id, attr1, attr2));
-        }
-        return dataList;
-    }
-
-    // 解析 JSON 数据（测试用）
-    public List<Data> parseFromJson(String filePath) {
-        List<Data> dataList = new ArrayList<>();
-        try {
-            JsonNode rootNode = objectMapper.readTree(new File(filePath));
-            JsonNode arrayNode = rootNode.path("data");
-
-            if (arrayNode.isArray()) {
-                for (JsonNode jsonNode : arrayNode) {
-                    Data data = new Data(
-                            jsonNode.path("id").asText(),
-                            jsonNode.path("key1").asText(),
-                            jsonNode.path("key2").asText()
-                    );
-                    dataList.add(data);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("读取 JSON 文件失败: " + e.getMessage());
-        }
-        return dataList;
-    }
-
-    // 解析 XML 数据（测试用）
-    public List<Data> parseFromXml(String filePath) {
-        List<Data> dataList = new ArrayList<>();
-
-        Document doc = readXmlFile(filePath);
-        doc.getDocumentElement().normalize();
-        NodeList dataNodes = doc.getElementsByTagName("data");
-        Element dataElement = (Element) dataNodes.item(0);
-        NodeList itemNodes = dataElement.getElementsByTagName("item");
-
-        for (int i = 0; i < itemNodes.getLength(); i++) {
-            Node itemNode = itemNodes.item(i);
-
-            if (itemNode.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element) itemNode;
-                Data data = new Data(
-                        itemElement.getElementsByTagName("id").item(0).getTextContent(),
-                        itemElement.getElementsByTagName("key1").item(0).getTextContent(),
-                        itemElement.getElementsByTagName("key2").item(0).getTextContent()
-                );
-                dataList.add(data);
-            }
-        }
-        return dataList;
-    }
-
-    // ----- API 提取 -----
+    // ----- API 抽取 -----
     // 请求 URL、方法、头
     @Value("${api.baseUrl}")
     private String baseUrl;
@@ -128,10 +49,11 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
 
     @PostConstruct
     public void init() {
-        headers = HttpUtils.getDefaultHeaders(); // 获取默认请求头
+        headers = HttpUtils.createDefaultHeaders(); // 获取默认请求头
         headers.put(headerKey, headerValue);    // 添加自定义请求头
     }
 
+    // ----- API 抽取 -----
     // 生成请求参数（测试用）
     public List<Map<String, String>> generateParams(int count) {
         // 此处以一年中每一天的时间切片为例
@@ -147,10 +69,10 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
     }
 
     // 单次请求
-    public List<String> request(Map<String, ?> params) {
-        List<String> responses = new ArrayList<>();
+    public List<JsonNode> request(Map<String, ?> params) {
+        List<JsonNode> responses = new ArrayList<>();
         try {
-            responses.add(sendHttpRequest(baseUrl, method, headers, params));
+            responses.add(HttpUtils.executeAsJson(baseUrl, method, headers, params));
         } catch (Exception e) {
             System.err.println("请求失败: " + e.getMessage());
         }
@@ -158,34 +80,33 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
     }
 
     // 依次请求
-    public List<String> request(Map<String, ?>... paramsArray) {
-        return mapEach(new ArrayList<>(Arrays.asList(paramsArray)), this::request);
+    public List<JsonNode> request(Map<String, ?>... paramsArray) {
+        return BatchUtils.mapEach(new ArrayList<>(Arrays.asList(paramsArray)), this::request);
     }
 
     // 单批异步请求
-    public List<String> requestBatch(List<? extends Map<String, ?>> paramsList) {
-        List<CompletableFuture<String>> futures = new ArrayList<>();
-
-        // 添加异步请求任务
-        for (Map<String, ?> params : paramsList) {
-            CompletableFuture<String> future = sendAsyncHttpRequest(baseUrl, method, headers, params);
-            futures.add(future);
-        }
-
-        // 等待异步任务完成，超时时间为 30 分钟
+    public List<JsonNode> requestBatch(List<? extends Map<String, ?>> paramsList) {
+        List<CompletableFuture<JsonNode>> futures = new ArrayList<>();
         try {
+            // 添加异步请求任务
+            for (Map<String, ?> params : paramsList) {
+                CompletableFuture<JsonNode> future = HttpUtils.executeAsyncAsJson(baseUrl, method, headers, params);
+                futures.add(future);
+            }
+
+            // 等待异步任务完成，超时时间为 30 分钟
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(1800, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         } catch (TimeoutException e) {
-            System.out.println("请求超时");
+            System.err.println("请求超时");
             e.printStackTrace();
             return Collections.emptyList();
         }
 
-        // 将所有异步请求的结果获取为 List<String>
-        List<String> responses = new ArrayList<>();
-        for (CompletableFuture<String> future : futures) {
+        // 将所有异步请求的结果获取为 List<JsonNode>
+        List<JsonNode> responses = new ArrayList<>();
+        for (CompletableFuture<JsonNode> future : futures) {
             try {
                 responses.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
@@ -197,17 +118,17 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
     }
 
     // 分批异步请求
-    public List<String> requestBatch(List<? extends Map<String, ?>> paramsList, int batchSize) {
-        return mapBatch(paramsList, batchSize, this::requestBatch);
+    public List<JsonNode> requestBatch(List<? extends Map<String, ?>> paramsList, int batchSize) {
+        return BatchUtils.mapBatch(paramsList, batchSize, this::requestBatch);
     }
 
     // 生成响应内容（测试用）
-    public List<String> generateResponses(int count) {
+    public List<JsonNode> generateResponses(int count) {
         final String CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         final SecureRandom random = new SecureRandom();
         final int attrLength = 16;
 
-        List<String> responses = new ArrayList<>(count);
+        List<JsonNode> responses = new ArrayList<>(count);
 
         StringBuilder jsonBuilder = new StringBuilder();
         StringBuilder randomBuilder = new StringBuilder(attrLength);
@@ -244,14 +165,18 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
                     .append("\"key2\":\"").append(attr2).append("\"")
                     .append("}]}")
                     .append("}");
+            try {
+                responses.add(JsonUtils.DEFAULT_MAPPER.readTree(jsonBuilder.toString()));
+            } catch (JsonProcessingException e) {
 
-            responses.add(jsonBuilder.toString());
+            }
+
         }
 
         return responses;
     }
 
-    // ----- 数据库提取 -----
+    // ----- 数据库抽取 -----
     // 查询总数
     public int countAll() {
         return baseMapper.countAll();
@@ -269,7 +194,47 @@ public class DataExtractServiceImpl extends BaseServiceImpl<Data> implements Ext
 
     // 分批查询
     public List<Data> selectBatchByIds(List<String> ids, int batchSize) {
-        return mapBatch(ids, batchSize, baseMapper::selectBatchByIds);
+        return BatchUtils.mapBatch(ids, batchSize, baseMapper::selectBatchByIds);
+    }
+
+    // ----- 消息队列抽取 -----
+    @Autowired
+    RabbitTemplate rabbitTemplate;
+
+    // 单次同步接收
+    public JsonNode receive() {
+        JsonNode message = null;
+        try {
+            message = MqUtils.receiveAsJson(rabbitTemplate);
+        } catch (Exception e) {
+            System.err.println("消息接收失败: " + e.getMessage());
+        }
+        return message;
+    }
+
+    // 依次同步接收（指定数量）
+    public List<JsonNode> receive(int count) {
+        List<JsonNode> messages = new ArrayList<>();
+        for(int i = 0; i < count; i++) {
+            JsonNode message = receive();
+            if (message != null) {
+                messages.add(message);
+            } else {
+                // 如果中途队列为空（null），则提前结束
+                break;
+            }
+        }
+        return messages;
+    }
+
+    // 依次同步接收（所有消息）
+    public List<JsonNode> receiveAll() {
+        List<JsonNode> messages = new ArrayList<>();
+        JsonNode message;
+        while ((message = receive()) != null) {
+            messages.add(message);
+        }
+        return messages;
     }
 
 }

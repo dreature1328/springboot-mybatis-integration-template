@@ -1,6 +1,10 @@
 package dreature.smit.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import dreature.smit.common.stats.IntegrationStats;
+import dreature.smit.common.util.BatchUtils;
+import dreature.smit.common.util.JsonUtils;
+import dreature.smit.common.util.XmlUtils;
 import dreature.smit.common.vo.Result;
 import dreature.smit.entity.Data;
 import dreature.smit.service.ExtractService;
@@ -12,13 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static dreature.smit.common.util.BatchUtils.mapEach;
 
 @RestController
 @RequestMapping("/data")
@@ -78,37 +81,39 @@ public class DataController {
         return ResponseEntity.ok().body(Result.success(combinedReport.toString(), null));
     }
 
-    // ----- 文件提取 -----
+    // ----- 本地抽取 -----
     // 生成数据（测试用）
     @RequestMapping("/generate")
     public ResponseEntity<Result> generate(
             @RequestParam(name = "count", defaultValue = "10") int count
     ) {
-        List<Data> result = extractService.generate(count);
+        List<Data> result = transformService.generate(count);
         int resultCount = result.size();
         String message = String.format("生成 %d 条数据", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-    // 解析 JSON 数据（测试用）
+    // 解析 JSON 文件（测试用）
     @RequestMapping("/parse-json")
     public ResponseEntity<Result> parseFromJson() {
-        List<Data> result = extractService.parseFromJson("script/mock_data.json");
+        JsonNode jsonNode = JsonUtils.parseFile("script/mock_data.json");
+        List<Data> result = transformService.transform(jsonNode);
         int resultCount = result.size();
         String message = String.format("解析 %d 条 JSON 数据", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-    // 解析 XML 数据（测试用）
+    // 解析 XML 文件（测试用）
     @RequestMapping("/parse-xml")
     public ResponseEntity<Result> parseFromXml() {
-        List<Data> result = extractService.parseFromXml("script/mock_data.xml");
+        Document document = XmlUtils.parseFile("script/mock_data.xml");
+        List<Data> result = transformService.transform(document);
         int resultCount = result.size();
         String message = String.format("解析 %d 条 XML 数据", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-    // ----- API 提取 -----
+    // ----- API 抽取 -----
     // 生成请求参数（测试用）
     @RequestMapping("/params")
     public ResponseEntity<Result> generateParams(
@@ -126,7 +131,7 @@ public class DataController {
             @RequestParam(name = "total", defaultValue = "10") int total
     ) {
         List<Map<String, String>> paramsList = extractService.generateParams(total);
-        List<String> responses = mapEach(paramsList, extractService::request);
+        List<JsonNode> responses = BatchUtils.mapEach(paramsList, extractService::request);
         int resultCount = responses.size();
         String message = String.format("依次同步发送 %d 次请求，收到 %d 条响应", total, resultCount);
         return ResponseEntity.ok().body(Result.success(message, responses));
@@ -139,7 +144,7 @@ public class DataController {
             @RequestParam(name = "batch-size", defaultValue = "200") int batchSize
     ) {
         List<Map<String, String>> paramsList = extractService.generateParams(total);
-        List<String> responses = extractService.requestBatch(paramsList, batchSize);
+        List<JsonNode> responses = extractService.requestBatch(paramsList, batchSize);
         int resultCount = responses.size();
         String message = String.format("分批异步发送 %d 次请求，收到 %d 条响应", total, resultCount);
         return ResponseEntity.ok().body(Result.success(message, responses));
@@ -150,13 +155,13 @@ public class DataController {
     public ResponseEntity<Result> generateResponses(
             @RequestParam(name = "count", defaultValue = "10") int count
     ) {
-        List<String> result = extractService.generateResponses(count);
+        List<JsonNode> result = extractService.generateResponses(count);
         int resultCount = result.size();
         String message = String.format("生成 %d 条响应", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-    // ----- 数据库提取 -----
+    // ----- 数据库抽取 -----
     // 查询总数
     @RequestMapping("/count")
     public ResponseEntity<Result> countAll() {
@@ -168,7 +173,7 @@ public class DataController {
     // 查询数据
     @RequestMapping("/find")
     public ResponseEntity<Result> find(
-            @RequestParam(name = "count", required = false) Integer count
+            @RequestParam(name = "count", required = false) Integer count // 为空则查询所有记录
     ) {
         List<Data> result = (count == null ? extractService.findAll() : extractService.findRandomN(count));
         int resultCount = result.size();
@@ -188,6 +193,18 @@ public class DataController {
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
+    // ----- 消息队列抽取 -----
+    // 依次接收
+    @RequestMapping("/receive")
+    public ResponseEntity<Result> receive(
+            @RequestParam(name = "count", required = false) Integer count // 为空则接收所有消息
+    ) {
+        List<JsonNode> messages = (count == null ? extractService.receiveAll() : extractService.receive(count));
+        int resultCount = messages.size();
+        String message = String.format("收到 %d 条消息", resultCount);
+        return ResponseEntity.ok().body(Result.success(message, messages));
+    }
+
     // ----- 数据转换 -----
     // 传统转换
     @RequestMapping("/transform")
@@ -196,24 +213,24 @@ public class DataController {
     ) {
 //		List<Map<String, String>> paramsList = extractService.generateParams();
 //		List<String> responses = extractService.request(paramsList);
-        List<String> responses = extractService.generateResponses(total);
-        List<Data> dataList = transformService.transform(responses.toArray(new String[0]));
+        List<JsonNode> responses = extractService.generateResponses(total);
+        List<Data> dataList = transformService.transform(responses.toArray(new JsonNode[0]));
         int resultCount = dataList.size();
         String message = String.format("传统转换 %d 条数据", resultCount);
         return ResponseEntity.ok().body(Result.success(message, dataList));
     }
 
-    // 流水线转换
-    @RequestMapping("/transform-pipeline")
-    public ResponseEntity<Result> transformPipeline(
+    // 流式转换
+    @RequestMapping("/transform-stream")
+    public ResponseEntity<Result> transformStream(
             @RequestParam(name = "total", defaultValue = "1000") int total
     ) {
 //		List<Map<String, String>> paramsList = extractService.generateParams();
 //		List<String> responses = extractService.requestBatch(paramsList);
-        List<String> responses = extractService.generateResponses(total);
-        List<Data> dataList = transformService.transformPipeline(responses);
+        List<JsonNode> responses = extractService.generateResponses(total);
+        List<Data> dataList = transformService.transformStream(responses);
         int resultCount = dataList.size();
-        String message = String.format("流水线转换 %d 条数据", resultCount);
+        String message = String.format("流式转换 %d 条数据", resultCount);
         return ResponseEntity.ok().body(Result.success(message, dataList));
     }
 
@@ -224,7 +241,7 @@ public class DataController {
             @RequestParam(name = "total", defaultValue = "1000") int total,
             @RequestParam(name = "batch-size", defaultValue = "1000") int batchSize
     ) {
-        int affectedRows = loadService.insertBatch(extractService.generate(total), batchSize);
+        int affectedRows = loadService.insertBatch(transformService.generate(total), batchSize);
         String message = String.format("分批插入 %d 条数据", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));
     }
@@ -235,7 +252,7 @@ public class DataController {
             @RequestParam(name = "total", defaultValue = "1000") int total,
             @RequestParam(name = "batch-size", defaultValue = "1000") int batchSize
     ) {
-        int affectedRows = loadService.updateBatch(extractService.generate(total), batchSize);
+        int affectedRows = loadService.updateBatch(transformService.generate(total), batchSize);
         String message = String.format("分批更新 %d 条数据", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));
     }
@@ -246,7 +263,7 @@ public class DataController {
             @RequestParam(name = "total", defaultValue = "1000") int total,
             @RequestParam(name = "batch-size", defaultValue = "1000") int batchSize
     ) {
-        int affectedRows = loadService.upsertBatch(extractService.generate(total), batchSize);
+        int affectedRows = loadService.upsertBatch(transformService.generate(total), batchSize);
         String message = String.format("分批插入或更新 %d 条数据", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));
     }
@@ -268,6 +285,28 @@ public class DataController {
         int count = extractService.countAll();
         loadService.truncate();
         String message = String.format("清空 %d 条数据", count);
+        return ResponseEntity.ok().body(Result.success(message, null));
+    }
+
+    // ----- 消息队列发布 -----
+    // 逐项发送
+    @RequestMapping("/send")
+    public ResponseEntity<Result> send(
+            @RequestParam(name = "total", defaultValue = "10") int total
+    ) {
+        int successCount = loadService.send(transformService.generate(total));
+        String message = String.format("发送 %d 条消息", successCount);
+        return ResponseEntity.ok().body(Result.success(message, null));
+    }
+
+    // 分批发送
+    @RequestMapping("/send-batch")
+    public ResponseEntity<Result> sendBatch(
+            @RequestParam(name = "total", defaultValue = "1000") int total,
+            @RequestParam(name = "batch-size", defaultValue = "100") int batchSize
+    ) {
+        int successCount = loadService.sendBatch(transformService.generate(total), batchSize);
+        String message = String.format("发送 %d 条消息", successCount);
         return ResponseEntity.ok().body(Result.success(message, null));
     }
 }

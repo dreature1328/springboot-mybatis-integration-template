@@ -1,6 +1,6 @@
 ## 基于 Spring Boot + MyBatis 的轻量级数据集成模板
 
-本项目是针对数据集成场景的模板工程，基于 Spring Boot + MyBatis，提供 ETL 流程的**轻量级**实现方案，**不涉及**分布式框架（Hadoop、Spark、Flink等），支持多数据源（数据库、REST 接口等），可处理**千万级**（10M+）数据量，便于初学者理解流程。
+本项目是针对数据集成场景的模板工程，基于 Spring Boot + MyBatis，提供 ETL 流程的**轻量级**实现方案，**不涉及**分布式框架（Hadoop、Spark、Flink 等），支持多数据源（本地文件、数据库、API、消息队列等），可处理单任务**千万级**数据量，便于初学者理解流程。
 
 ### 关联项目
 
@@ -22,11 +22,17 @@
 
 ### 架构设计
 
-项目采用 MVC 分层架构。服务层基于 ETL 功能划分为抽取（Extract）、转换（Transform）、加载（Load）等模块。持久层采用原生 MyBatis 实现（未采用 MyBatis-Plus），便于理解原理以及灵活处理 SQL。
+项目采用 MVC 分层架构，服务层基于 ETL 功能划分。
+
+- 抽取服务（Extract）：支持多源数据接入，包括本地文件（JSON/XML 文件）、数据库（MySQL）、API（REST 规范）、消息队列（RabbitMQ）。
+- 转换服务（Transform）：负责数据格式转换（JSON/XML 与实体类的映射）。
+- 加载服务（Load）：结合持久层，基于原生 MyBatis 实现（未采用 MyBatis-Plus），便于理解逻辑和灵活处理 SQL。
 
 ### 启动流程
 
 启动整个项目就是常规 Spring Boot 的操作，在 `application.properties` 进行相应配置后，运行启动类 `Application.java`，后续借助测试接口触发 ETL 流程。
+
+启用异步监听消息队列的功能需将对应的函数（`@RabbitListener`）注释还原并实现逻辑。
 
 ### 相关脚本
 

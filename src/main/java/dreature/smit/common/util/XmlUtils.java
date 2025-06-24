@@ -2,6 +2,7 @@ package dreature.smit.common.util;
 
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -11,17 +12,14 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class XmlUtils {
-    private static final DocumentBuilderFactory documentBuilderFactory;
-    private static final TransformerFactory transformerFactory;
-    private static final DocumentBuilder documentBuilder;
+    public static final DocumentBuilderFactory documentBuilderFactory;
+    public static final TransformerFactory transformerFactory;
+    public static final DocumentBuilder documentBuilder;
 
     static {
         documentBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -192,9 +190,9 @@ public class XmlUtils {
         return attributes;
     }
 
-//    public static String getElementText(Element element) {
-//        return element.getTextContent();
-//    }
+    public static String getElementText(Element element) {
+        return element.getTextContent();
+    }
 
     // 获取元素所有同名标签下的所有文本
     public static String getElementText(Element parent, String tagName) {
@@ -207,7 +205,7 @@ public class XmlUtils {
     }
 
     // 从指定文件名读取 XML 文件并返回 Document 对象
-    public static Document readXmlFile(String filename) {
+    public static Document parseFile(String filename) {
         // 创建一个文件对象
         File xmlFile = new File(filename);
         try {
@@ -215,10 +213,13 @@ public class XmlUtils {
             FileInputStream fis = new FileInputStream(xmlFile);
             // 解析XML文件并返回Document对象
             Document doc = documentBuilder.parse(fis);
+            doc.getDocumentElement().normalize();
             return doc;
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;
+        } catch (IOException | SAXException e) {
+            throw new RuntimeException("XML 解析失败", e);
         }
     }
 

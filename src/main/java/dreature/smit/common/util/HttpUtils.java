@@ -1,13 +1,17 @@
 package dreature.smit.common.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -17,16 +21,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 public class HttpUtils {
+    // ----- 常量 / 配置 -----
+    public static final int BUFFER_SIZE = 4096;
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    // 默认请求头
-    public static Map<String, String> getDefaultHeaders() {
+    // 创建默认请求头
+    public static Map<String, String> createDefaultHeaders() {
         Map<String, String> headers = new HashMap<>();
-                // 设置接收内容类型
+        // 设置接收内容类型
         headers.put("Accept", "application/json");
         // 设置发送内容类型
-        headers.put("Content-Type", "application/json;charset=UTF-8");
-        // 设置字符集
-        headers.put("charset", "UTF-8");
+        headers.put("Content-Type", "application/json;charset=" + DEFAULT_CHARSET.name());
         // 设置访问者系统引擎版本、浏览器信息的字段信息，此处伪装成用户通过浏览器访问
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
         return headers;
@@ -40,14 +45,9 @@ public class HttpUtils {
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
-
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            }
-            };
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+            }};
 
             // 安装 TrustManager
             SSLContext sc = SSLContext.getInstance("SSL");
@@ -70,8 +70,153 @@ public class HttpUtils {
         }
     }
 
-    // 添加请求头到连接
-    public static void addHeadersToRequest(HttpsURLConnection connection, Map<String, ?> headers) {
+    // ----- 执行流程 -----
+    // 同步执行流程（发起 HTTP 请求 + 解析响应内容）
+    public static <T> T execute(String url, String method, Map<String, ?> headers, Map<String, ?> params, Class<T> targetType) throws IOException {
+        // url 是 String 类型的 Url
+        // method 是 String 类型的请求方法，为 "GET" 或 "POST"
+        // headers 键与值分别是请求头名与请求头值，有重复同名请求头时将多个值放进数组
+        // params 键与值分别是参数名与参数值，Url 有重复同名参数时将多个值放进数组
+
+        HttpURLConnection connection = null;
+        try {
+            // 忽略验证 HTTPS 中 SSL 证书
+            disableSslVerification();
+
+            // 请求方法统一大写
+            method = method.toUpperCase();
+
+            // GET 方法下，参数拼接在 URL 末尾
+            if ("GET".equals(method)) {
+                url = buildUrlWithQueryParams(url, params);
+            }
+
+            connection = (HttpURLConnection) new URL(url).openConnection();
+
+            // 设置请求方法
+            connection.setRequestMethod(method);
+
+            // 设置请求头
+            applyHeaders(connection, headers);
+
+            // 请求时是否使用缓存
+            connection.setUseCaches(false);
+
+            // 此处默认 POST、PUT、PATCH 方法发送 JSON 形式参数的请求体，可自行更改
+            if ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method)) {
+                connection.setDoOutput(true);
+                writeRequestBody(connection, params);
+            } else {
+                connection.setDoOutput(false);
+                connection.connect();
+            }
+
+            return parseResponse(connection, targetType);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    // 同步执行流程并返回字节数组（byte[]）
+    public static byte[] executeAsBytes(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return execute(url, method, headers, params, byte[].class);
+    }
+
+    // 同步执行流程并返回字符串（String）
+    public static String executeAsString(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return execute(url, method, headers, params, String.class);
+    }
+
+    // 同步执行流程并返回 JSON（JsonNode）
+    public static JsonNode executeAsJson(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return execute(url, method, headers, params, JsonNode.class);
+    }
+
+    // 同步执行流程并返回 XML（Document）
+    public static Document executeAsXml(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return execute(url, method, headers, params, Document.class);
+    }
+
+    // 异步执行流程（发起 HTTP 请求 + 解析响应内容）
+    public static <T> CompletableFuture<T> executeAsync(String url, String method, Map<String, ?> headers, Map<String, ?> params, Class<T> targetType) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return execute(url, method, headers, params, targetType);
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
+    }
+
+    // 异步执行流程并返回字节数组（byte[]）
+    public static CompletableFuture<byte[]> executeAsyncAsBytes(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return executeAsync(url, method, headers, params, byte[].class);
+    }
+
+    // 异步执行流程并返回字符串（String）
+    public static CompletableFuture<String> executeAsyncAsString(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return executeAsync(url, method, headers, params, String.class);
+    }
+
+    // 异步执行流程并返回 JSON（JsonNode）
+    public static CompletableFuture<JsonNode> executeAsyncAsJson(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return executeAsync(url, method, headers, params, JsonNode.class);
+    }
+
+    // 异步执行流程并返回 XML（Document）
+    public static CompletableFuture<Document> executeAsyncAsXml(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws IOException {
+        return executeAsync(url, method, headers, params, Document.class);
+    }
+
+    // ----- 构建请求 -----
+    public static String buildUrlWithQueryParams(String baseUrl, Map<String, ?> params) throws IOException {
+        // baseUrl 是基础的静态 URL
+        // params 键与值分别是参数名与参数值，URL 有重复同名参数时将多个值放进数组
+
+        if (params == null || params.isEmpty()) return baseUrl;
+
+        StringBuilder urlBuilder = new StringBuilder(baseUrl);
+
+        // 判断 Url 中是否已经包含参数
+        boolean isFirstParam = !baseUrl.contains("?");
+
+        // 遍历参数
+        for (Map.Entry<String, ?> entry : params.entrySet()) {
+            String key = entry.getKey(); // 参数名
+            Object value = entry.getValue(); // 参数值
+
+            if (value instanceof Iterable) {
+                for (Object item : (Iterable<?>) value) {
+                    appendQueryParam(urlBuilder, key, item, isFirstParam);
+                    isFirstParam = false;
+                }
+            } else if (value.getClass().isArray()) {
+                for (Object item : (Object[]) value) {
+                    appendQueryParam(urlBuilder, key, item, isFirstParam);
+                    isFirstParam = false;
+                }
+            } else {
+                appendQueryParam(urlBuilder, key, value, isFirstParam);
+                isFirstParam = false;
+            }
+        }
+
+        return urlBuilder.toString();
+    }
+
+    // 拼接参数
+    public static void appendQueryParam(StringBuilder builder, String key, Object value, boolean isFirstParam)
+            throws UnsupportedEncodingException {
+        builder.append(isFirstParam ? "?" : "&")
+                .append(URLEncoder.encode(key, DEFAULT_CHARSET.name()))
+                .append("=")
+                .append(URLEncoder.encode(value != null ? value.toString() : "", DEFAULT_CHARSET.name()));
+    }
+
+    // 添加请求头
+    public static void applyHeaders(HttpURLConnection connection, Map<String, ?> headers) {
         if (headers == null) return;
 
         for (Map.Entry<String, ?> entry : headers.entrySet()) {
@@ -92,167 +237,86 @@ public class HttpUtils {
         }
     }
 
-    // 构建带参数的 URL
-    public static String buildUrlWithParams(String baseUrl, String params){
-        return baseUrl + params;
+    // 写入请求体（JSON 形式）
+    public static void writeRequestBody(
+            HttpURLConnection connection,
+            Map<String, ?> params
+    ) throws IOException {
+        try (OutputStream out = connection.getOutputStream()) {
+            if (params == null || params.isEmpty()) return;
+            out.write(JsonUtils.DEFAULT_MAPPER.writeValueAsString(params).getBytes(DEFAULT_CHARSET));
+        }
     }
 
-    public static String buildUrlWithParams(String baseUrl, Map<String, ?> params) throws IOException {
-        // baseUrl 是基础的静态 URL
-        // params 键与值分别是参数名与参数值，URL 有重复同名参数时将多个值放进数组
+    // ----- 响应处理 -----
+    // 读取响应内容（字节数组）
+    public static byte[] readResponseBytes(HttpURLConnection connection) throws IOException {
+        try (InputStream input = connection.getInputStream();
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
-        if (params == null || params.isEmpty()) {
-            return baseUrl;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+            return output.toByteArray();
         }
+    }
 
-        StringBuilder urlBuilder = new StringBuilder(baseUrl);
+    // 解析响应为结构化类型
+    public static <T> T parseResponse(HttpURLConnection connection, Class<T> targetType) throws IOException {
+        byte[] responseBytes = readResponseBytes(connection);
+        String contentType = connection.getContentType().toLowerCase();
 
-        // 判断 Url 中是否已经包含参数
-        boolean isFirstParam = !baseUrl.contains("?");
-
-        // 遍历参数
-        for (Map.Entry<String, ?> entry : params.entrySet()) {
-            String key = entry.getKey(); // 参数名
-            Object value = entry.getValue(); // 参数值
-
-            if (value instanceof Iterable) {
-                for (Object item : (Iterable<?>) value) {
-                    appendParam(urlBuilder, key, item, isFirstParam);
-                    isFirstParam = false;
-                }
-            } else if (value.getClass().isArray()) {
-                for (Object item : (Object[]) value) {
-                    appendParam(urlBuilder, key, item, isFirstParam);
-                    isFirstParam = false;
-                }
-            } else {
-                appendParam(urlBuilder, key, value, isFirstParam);
-                isFirstParam = false;
+        // 基于预定义类型解析
+        if (targetType == byte[].class) {
+            return targetType.cast(responseBytes);
+        } else if (targetType == String.class) {
+            return targetType.cast(parseString(responseBytes));
+        } else if (JsonNode.class.isAssignableFrom(targetType)) {
+            return targetType.cast(parseJson(responseBytes));
+        } else if (Document.class.isAssignableFrom(targetType)) {
+            return targetType.cast(parseXml(responseBytes));
+        } else if (targetType == Object.class && contentType != null) {
+            // 无明确预定义类型时，基于内容类型推测
+            if (contentType.contains("json")) {
+                return targetType.cast(parseJson(responseBytes));
+            } else if (contentType.contains("xml")) {
+                return targetType.cast(parseXml(responseBytes));
+            } else if (contentType.contains("text")) {
+                return targetType.cast(parseString(responseBytes));
             }
         }
 
-        return urlBuilder.toString();
+        // 最终回退逻辑
+        throw new IOException("不受支持的类型解析");
     }
 
-    // 拼接参数
-    private static void appendParam(StringBuilder builder, String key, Object value, boolean isFirstParam)
-            throws UnsupportedEncodingException {
-        builder.append(isFirstParam ? "?" : "&")
-                .append(key)
-                .append("=")
-                .append(URLEncoder.encode(value.toString(), "UTF-8"));
+    // 解析字节数组为字符串（String）（默认编码）
+    public static String parseString(byte[] bytes) {
+        return parseString(bytes, DEFAULT_CHARSET);
     }
 
-    // 发起 HTTP 请求并获取响应内容
-    // 重载 sendHttpRequest()，相当于参数有默认值
-    public static String sendHttpRequest(String strUrl) throws Exception {
-        return sendHttpRequest(strUrl, "GET", null, null);
+    // 解析字节数组为字符串（String）（指定编码）
+    public static String parseString(byte[] bytes, Charset charset) {
+        return new String(bytes, charset);
     }
-    public static String sendHttpRequest(String strUrl, String method) throws Exception {
-        return sendHttpRequest(strUrl, method, null, null);
-    }
-    public static String sendHttpRequest(String strUrl, String method, Map<String, ?> headers) throws Exception {
-        return sendHttpRequest(strUrl, method, headers, null);
-    }
-    public static String sendHttpRequest(String url, String method, Map<String, ?> headers, Map<String, ?> params) throws Exception {
-        // strUrl 是 String 类型的 Url
-        // method 是 String 类型的请求方法，为 "GET" 或 "POST"
-        // headers 键与值分别是请求头名与请求头值，有重复同名请求头时将多个值放进数组
-        // params 键与值分别是参数名与参数值，Url 有重复同名参数时将多个值放进数组
 
-        // 忽略验证 https 中 SSL 证书
-        disableSslVerification();
-
-        // GET 方法下，query 参数拼接在 Url 字符串末尾
-        if(method.equals("GET") && params != null) {
-            url = buildUrlWithParams(url, params);
+    // 解析字节数组为 JSON（JsonNode）
+    public static JsonNode parseJson(byte[] bytes) throws IOException {
+        try {
+            return JsonUtils.DEFAULT_MAPPER.readTree(bytes);
+        } catch (JsonProcessingException e) {
+            throw new IOException("JSON 解析失败", e);
         }
-
-        HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod(method);
-
-
-
-        // 请求时是否使用缓存
-        connection.setUseCaches(false);
-
-        // POST 方法请求必须设置下面两项
-        // 设置是否从 HttpUrlConnection 的对象写
-        connection.setDoOutput(true);
-        // 设置是否从 HttpUrlConnection 的对象读入
-        connection.setDoInput(true);
-
-        // 设置请求头
-        addHeadersToRequest(connection, headers != null ? headers : getDefaultHeaders());
-
-        // 此处默认 POST 方法发送的内容就是 JSON 形式的 body 参数，可以自行更改
-        if(method.equalsIgnoreCase("POST") && params != null) {
-            // 发送请求
-            OutputStream out = new DataOutputStream(connection.getOutputStream());
-            // getBytes() 作用为根据参数给定的编码方式，将一个字符串转化为一个字节数组
-            out.write(JsonUtils.DEFAULT_MAPPER.writeValueAsString(params).getBytes("UTF-8"));
-            out.flush();
-        }
-        else{
-            //发送请求
-            connection.connect();
-        }
-
-
-        String result = readResponseBody(connection);
-
-//        // 输出响应内容
-//         String contentType = connect.getContentType();
-//         printResponseContent(result, contentType);
-
-        return result;
     }
 
-    // 异步 HTTP 请求
-    public static CompletableFuture<String> sendAsyncHttpRequest(String url, String method, Map<String, ?> headers, Map<String, ?> params) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return sendHttpRequest(url, method, headers, params);
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
-        });
-    }
-
-    // 读取响应体
-    private static String readResponseBody(HttpURLConnection connection) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String line;
-        StringBuffer buffer = new StringBuffer();
-        while ((line = reader.readLine()) != null) {
-            buffer.append(line);
-        }
-        reader.close();
-        return buffer.toString();
-    }
-
-    // 输出响应内容
-    public static void printResponseContent(String content, String contentType) throws Exception {
-        // contentType 是接收内容类型
-        // 响应内容为 JSON 格式
-        if (contentType.contains("application/json")) {
-            // 解析 JSON 字符串为 JSON 对象
-            JsonNode jsonNode = JsonUtils.DEFAULT_MAPPER.readTree(content);
-            JsonUtils.printJson(jsonNode,0);
-        }
-        // 响应内容为 XML 格式
-        else if (contentType.contains("application/xml")) {
-            // 将 XML 字符串解析成 Document 对象
-            Document doc = XmlUtils.stringToDocument(content);
-            XmlUtils.printXml(doc);
-        }
-        // 响应内容为 HTML 格式、纯文本格式
-        else if (contentType.contains("text/html") || contentType.contains("text/plain")) {
-            System.out.println(content);
-        }
-        // 响应内容为其他格式
-        else {
-            System.out.println(content);
+    // 解析字节数组为 XML（Document）
+    public static Document parseXml(byte[] bytes) throws IOException {
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
+            return XmlUtils.documentBuilder.parse(stream);
+        } catch (SAXException e) {
+            throw new IOException("XML 解析失败", e);
         }
     }
 }
