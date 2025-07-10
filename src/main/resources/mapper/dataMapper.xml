@@ -1,49 +1,58 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="dreature.smit.mapper.DataMapper">
-
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.smit.mapper.DataMapper">
     <!-- 表和类映射关系 -->
-    <resultMap id="dataMap" type="Data">
+    <resultMap id="dataMap" type="data">
         <id property="id" column="id"/>
-        <result property="attr1" column="field1"/>
-        <result property="attr2" column="field2"/>
+        <result property="numericValue" column="numeric_value"/>
+        <result property="decimalValue" column="decimal_value"/>
+        <result property="textContent" column="text_content"/>
+        <result property="activeFlag" column="active_flag"/>
     </resultMap>
 
     <!-- 表结构 -->
     <sql id="table">`data_table`</sql>
-    <sql id="columns">`id`, `field1`, `field2`</sql>
+    <sql id="columns">`id`, `numeric_value`, `decimal_value`, `text_content`, `active_flag`</sql>
 
     <!-- 值映射 -->
-    <sql id="values">#{id}, #{attr1}, #{attr2}</sql>
-    <sql id="itemValues">#{item.id}, #{item.attr1}, #{item.attr2}</sql>
+    <sql id="values">#{id}, #{numericValue}, #{decimalValue}, #{textContent}, #{activeFlag}</sql>
+    <sql id="itemValues">#{item.id}, #{item.numericValue}, #{item.decimalValue}, #{item.textContent}, #{item.activeFlag}</sql>
 
     <!-- 更新设置 -->
-    <sql id="set">`id` = #{id}, `field1` = #{attr1}, `field2` = #{attr2}</sql>
-    <sql id="conflictSet">`id` = VALUES(`id`), `field1` = VALUES(`field1`), `field2` = VALUES(`field2`)</sql>
+    <sql id="set">`numeric_value` = #{numericValue}, `decimal_value` = #{decimalValue}, `text_content` = #{textContent}, `active_flag` = #{activeFlag}</sql>
+    <sql id="conflictSet">`numeric_value` = VALUES(`numeric_value`), `decimal_value` = VALUES(`decimal_value`), `text_content` = VALUES(`text_content`), `active_flag` = VALUES(`active_flag`)</sql>
 
     <!-- 查询总数 -->
-    <select id="countAll" resultType="java.lang.Integer">
+    <select id="countAll" resultType="int">
         SELECT COUNT(*)
         FROM <include refid="table"/>
     </select>
 
     <!-- 查询全表 -->
-    <select id="findAll" resultMap="dataMap">
-        SELECT *
-        FROM
-        <include refid="table"/>
+    <select id="selectAll" resultMap="dataMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
     </select>
 
-    <!-- 查询 n 条 -->
-    <select id="findRandomN" parameterType="Integer" resultMap="dataMap">
-        SELECT *
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="int" resultMap="dataMap">
+        SELECT <include refid="columns"/>
         FROM <include refid="table"/>
-        LIMIT #{n}
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" parameterType="int" resultMap="dataMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY `id`
+        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <!-- 单项查询 -->
-    <select id="selectById" parameterType="String" resultMap="dataMap">
+    <select id="selectById" parameterType="long" resultMap="dataMap">
         SELECT <include refid="columns"/>
         FROM <include refid="table"/>
         WHERE `id` = #{id}
@@ -60,47 +69,52 @@
     </select>
 
     <!-- 单项插入 -->
-    <insert id="insert" parameterType="Data">
+    <insert id="insert" parameterType="data">
         INSERT INTO <include refid="table"/>
-        (<include refid="columns"/>)
+            (<include refid="columns"/>)
         VALUES (<include refid="values"/>)
     </insert>
 
     <!-- 单批插入 -->
-    <insert id="insertBatch" parameterType="java.util.List">
+    <insert id="insertBatch" parameterType="list">
         INSERT INTO <include refid="table"/>
-        (<include refid="columns"/>)
+            (<include refid="columns"/>)
         VALUES
-        <foreach collection="list" item="item" index="index" separator="," >
+        <foreach collection="list" item="item" index="index" separator=",">
             (<include refid="itemValues"/>)
         </foreach>
     </insert>
 
     <!-- 单项更新 -->
-    <update id="update" parameterType="Data">
+    <update id="update" parameterType="data">
         UPDATE <include refid="table"/>
         SET <include refid="set"/>
         WHERE `id` = #{id}
     </update>
 
     <!-- 单批更新 -->
-    <update id="updateBatch" parameterType="java.util.List">
+    <update id="updateBatch" parameterType="list">
         UPDATE <include refid="table"/>
         <trim prefix="SET" suffixOverrides=",">
             <!-- WHEN ... THEN ... 语句相当于编程语言中的 switch 语句 -->
-            <trim prefix=" `id` = CASE " suffix=" END, ">
+            <trim prefix=" `numeric_value` = CASE " suffix=" END, ">
                 <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.id}
+                    WHEN `id` = #{item.id} THEN #{item.numericValue}
                 </foreach>
             </trim>
-            <trim prefix=" `field1` = CASE " suffix=" END, ">
+            <trim prefix=" `decimal_value` = CASE " suffix=" END, ">
                 <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.attr1}
+                    WHEN `id` = #{item.id} THEN #{item.decimalValue}
                 </foreach>
             </trim>
-            <trim prefix=" `field2` = CASE " suffix=" END, ">
+            <trim prefix=" `text_content` = CASE " suffix=" END, ">
                 <foreach collection="list" item="item">
-                    WHEN `id` = #{item.id} THEN #{item.attr2}
+                    WHEN `id` = #{item.id} THEN #{item.textContent}
+                </foreach>
+            </trim>
+            <trim prefix=" `active_flag` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.activeFlag}
                 </foreach>
             </trim>
         </trim>
@@ -111,34 +125,34 @@
     </update>
 
     <!-- 单项插入或更新 -->
-    <insert id="upsert" parameterType="Data">
+    <insert id="upsert" parameterType="data">
         INSERT INTO <include refid="table"/>
-        (<include refid="columns"/>)
+            (<include refid="columns"/>)
         VALUES (<include refid="values"/>)
         ON DUPLICATE KEY UPDATE
-        <include refid="conflictSet"/>
+            <include refid="conflictSet"/>
     </insert>
 
     <!-- 单批插入或更新 -->
-    <insert id="upsertBatch" parameterType="java.util.List">
+    <insert id="upsertBatch" parameterType="list">
         INSERT INTO <include refid="table"/>
-        (<include refid="columns"/>)
+            (<include refid="columns"/>)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (<include refid="itemValues"/>)
         </foreach>
         ON DUPLICATE KEY UPDATE
-        <include refid="conflictSet"/>
+            <include refid="conflictSet"/>
     </insert>
 
     <!-- 单项删除 -->
-    <delete id="deleteById" parameterType="String">
+    <delete id="deleteById" parameterType="long">
         DELETE FROM <include refid="table"/>
         WHERE `id` = #{id}
     </delete>
 
     <!-- 单批删除 -->
-    <delete id="deleteBatchByIds" parameterType="java.util.List">
+    <delete id="deleteBatchByIds" parameterType="list">
         DELETE FROM <include refid="table"/>
         WHERE `id` IN
         <foreach collection="list" item="item" open="(" close=")" separator=",">
@@ -150,5 +164,4 @@
     <update id="truncate">
         TRUNCATE TABLE <include refid="table"/>
     </update>
-
 </mapper>
