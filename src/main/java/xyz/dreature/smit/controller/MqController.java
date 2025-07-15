@@ -18,25 +18,35 @@ import java.util.List;
 @RequestMapping("/mq")
 public class MqController {
     @Autowired
-    private MqService<JsonNode, Data> mqService;
+    private MqService<Data, Data> mqService;
 
     // ===== 消息队列抽取 =====
+    // 查询总数
+    @RequestMapping("/count-all")
+    public ResponseEntity<Result<Integer>> countAll(
+    ) {
+        int count = mqService.countAll();
+        String message = String.format("查询总数为 %d 条", count);
+        return ResponseEntity.ok().body(Result.success(message, count));
+    }
+
     // 依次接收（定数）
     @RequestMapping("/receive")
-    public ResponseEntity<Result<List<JsonNode>>> receive(
-            @RequestParam(name = "count", defaultValue = "1") int count // 为空则接收所有消息
+    public ResponseEntity<Result<List<Data>>> receive(
+            @RequestParam(name = "count", defaultValue = "1") int count
     ) {
-        List<JsonNode> messages = mqService.receive(count);
+        List<Data> messages = mqService.receive(count);
         int resultCount = messages.size();
         String message = String.format("收到 %d 条消息", resultCount);
         return ResponseEntity.ok().body(Result.success(message, messages));
     }
 
     // 依次接收（全部）
-    @RequestMapping("/receive-all")
-    public ResponseEntity<Result<List<JsonNode>>> receiveAll(
+    @RequestMapping("/receive-batch")
+    public ResponseEntity<Result<List<Data>>> receiveBatch(
+            @RequestParam(name = "count", defaultValue = "1") int count
     ) {
-        List<JsonNode> messages = mqService.receiveAll();
+        List<Data> messages = mqService.receiveBatch(count);
         int resultCount = messages.size();
         String message = String.format("收到 %d 条消息", resultCount);
         return ResponseEntity.ok().body(Result.success(message, messages));
@@ -46,9 +56,9 @@ public class MqController {
     // 逐项发送
     @RequestMapping("/send")
     public ResponseEntity<Result<Void>> send(
-            @RequestBody List<Data> dataList
+            @RequestBody List<Data> payloads
     ) {
-        int successCount = mqService.send(dataList);
+        int successCount = mqService.sendWithConverter(payloads);
         String message = String.format("发送 %d 条消息", successCount);
         return ResponseEntity.ok().body(Result.success(message, null));
     }
@@ -56,10 +66,10 @@ public class MqController {
     // 分批发送
     @RequestMapping("/send-batch")
     public ResponseEntity<Result<Void>> sendBatch(
-            @RequestBody List<Data> dataList,
+            @RequestBody List<Data> payloads,
             @RequestParam(name = "batch-size", defaultValue = "100") int batchSize
     ) {
-        int successCount = mqService.sendBatch(dataList, batchSize);
+        int successCount = mqService.sendBatchWithConverter(payloads, batchSize);
         String message = String.format("发送 %d 条消息", successCount);
         return ResponseEntity.ok().body(Result.success(message, null));
     }

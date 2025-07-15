@@ -7,18 +7,17 @@ public class EtlContext {
     // ===== 属性 =====
     private String jobId;
 
-    private int extractBatchSize;
-    private int transformBatchSize;
-    private int loadBatchSize;
+    private int extractBatchSize; // 抽取批大小
+    private int transformBatchSize; // 转换批大小
+    private int loadBatchSize; // 加载批大小
 
-    private String extractStrategy; // 可选值: "db:id", "db:ids", "db:page", "db:random", "db:all"
-    private String transformStrategy; // 可选值: "basic"
-    private String loadStrategy; // 可选值: "db:insert", "db:update", "db:upsert"
+    private String extractStrategy; // 对应抽取器中的策略常量
+    private String transformStrategy; // 对应转换器中的策略常量
+    private String loadStrategy; // 对应加载器中的策略常量
 
     // ===== 构造方法 =====
     // 无参构造器
     public EtlContext() {
-        this.jobId = UUID.randomUUID().toString();
         this.extractBatchSize = 200;
         this.transformBatchSize = 1000;
         this.loadBatchSize = 2000;

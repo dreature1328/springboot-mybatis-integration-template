@@ -32,15 +32,16 @@ public class DbExtractor<S, ID extends Serializable> implements Extractor<S> {
                 ID id = extractIdFromParams(queryParams);
                 result.add(dbService.selectById(id));
                 return result;
-            case STRATEGY_IDS:
-                List<ID> ids = extractIdsFromParams(queryParams);
-                return dbService.selectBatchByIds(ids);
+
             case STRATEGY_PAGE:
                 return handlePageStrategy(queryParams);
+
             case STRATEGY_RANDOM:
                 return handleRandomStrategy(queryParams);
+
             case STRATEGY_ALL:
                 return dbService.selectAll();
+
             default:
                 throw new IllegalArgumentException("不支持的抽取策略: " + context.getExtractStrategy());
         }
@@ -55,17 +56,22 @@ public class DbExtractor<S, ID extends Serializable> implements Extractor<S> {
                     ids.add(extractIdFromParams(queryParams));
                 }
                 return dbService.selectBatchByIds(ids);
+
             case STRATEGY_IDS:
                 for (Map<String, ?> queryParams : queriesParams) {
                     ids.addAll(extractIdsFromParams(queryParams));
                 }
                 return dbService.selectBatchByIds(ids);
+
             case STRATEGY_PAGE:
                 return BatchUtils.flatMapEach(queriesParams, this::handlePageStrategy);
+
             case STRATEGY_RANDOM:
                 return BatchUtils.flatMapEach(queriesParams, this::handleRandomStrategy);
+
             case STRATEGY_ALL:
                 return dbService.selectAll();
+
             default:
                 throw new IllegalArgumentException("不支持的抽取策略: " + context.getExtractStrategy());
         }

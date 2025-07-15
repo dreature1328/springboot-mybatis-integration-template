@@ -21,11 +21,11 @@ import java.util.List;
 @RequestMapping("/file")
 public class FileController {
     @Autowired
-    @Qualifier("jsonDataTransformer")
+    @Qualifier("jsonEntityTransformer")
     Transformer jsonTransformer;
 
     @Autowired
-    @Qualifier("xmlDataTransformer")
+    @Qualifier("xmlEntityTransformer")
     Transformer xmlTransformer;
 
     // ===== 文件抽取 =====

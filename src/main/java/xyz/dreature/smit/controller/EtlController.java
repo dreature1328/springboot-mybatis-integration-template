@@ -23,27 +23,31 @@ import java.util.Map;
 @RequestMapping("/etl")
 public class EtlController {
     @Autowired
-    MockService mockService;
+    private MockService mockService;
 
     @Autowired
     @Qualifier("mockToDbOrch")
-    EtlOrchestrator<JsonNode, Data, Long> mockToDbOrch;
+    private EtlOrchestrator<JsonNode, Data, Long> mockToDbOrch;
 
     @Autowired
     @Qualifier("jsonFileToDbOrch")
-    EtlOrchestrator<JsonNode, Data, Long> jsonFileToDbOrch;
+    private EtlOrchestrator<JsonNode, Data, Long> jsonFileToDbOrch;
 
     @Autowired
     @Qualifier("xmlFileToDbOrch")
-    EtlOrchestrator<JsonNode, Data, Long> xmlFileToDbOrch;
+    private EtlOrchestrator<JsonNode, Data, Long> xmlFileToDbOrch;
 
     @Autowired
     @Qualifier("dbToDbOrch")
-    EtlOrchestrator<Data, Data, Long> dbToDbOrch;
+    private EtlOrchestrator<Data, Data, Long> dbToDbOrch;
+
+    @Autowired
+    @Qualifier("redisToDbOrch")
+    private EtlOrchestrator<Data, Data, Long> redisToDbOrch;
 
     @Autowired
     @Qualifier("mqToDbOrch")
-    private EtlOrchestrator mqToDbOrch;
+    private EtlOrchestrator<Data, Data, Long> mqToDbOrch;
 
     // ===== 模拟数据源集成 =====
     // 单次集成
@@ -52,6 +56,7 @@ public class EtlController {
             @RequestParam(name = "data-size", defaultValue = "10") int dataSize
     ) {
         EtlContext etlContext = new EtlContext();
+        etlContext.setLoadStrategy("db:upsert");
         EtlMetrics stats = mockToDbOrch.run(etlContext, mockService.generateMockParams(dataSize));
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -62,6 +67,7 @@ public class EtlController {
             @RequestParam(name = "data-size", defaultValue = "10") int dataSize
     ) {
         EtlContext etlContext = new EtlContext();
+        etlContext.setLoadStrategy("db:upsert");
         EtlMetrics stats = mockToDbOrch.runBatch(etlContext, mockService.generateMockParams(dataSize));
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -74,6 +80,7 @@ public class EtlController {
     ) {
         EtlContext etlContext = new EtlContext();
         etlContext.setExtractStrategy("file:json");
+        etlContext.setLoadStrategy("db:upsert");
         EtlMetrics stats = xmlFileToDbOrch.run(etlContext, filesParams);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -85,6 +92,7 @@ public class EtlController {
     ) {
         EtlContext etlContext = new EtlContext();
         etlContext.setExtractStrategy("file:json");
+        etlContext.setLoadStrategy("db:upsert");
         EtlMetrics stats = jsonFileToDbOrch.runBatch(etlContext, filesParams);
 //        etlContext.setExtractStrategy("file:xml");
 //        EtlMetrics stats = xmlFileToDbOrch.runBatch(etlContext, filesParams);
@@ -116,24 +124,52 @@ public class EtlController {
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
+    // ===== 缓存数据源集成 =====
+    // 单次集成
+    @RequestMapping("/redis/run")
+    public ResponseEntity<Result<String>> redisRun(
+            @RequestBody List<? extends Map<String, ?>> opsParams
+    ) {
+        EtlContext etlContext = new EtlContext();
+        etlContext.setExtractStrategy("redis:string");
+//        etlContext.setExtractStrategy("redis:list");
+        etlContext.setLoadStrategy("db:upsert");
+        EtlMetrics stats = redisToDbOrch.run(etlContext, opsParams);
+        return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
+    }
+
+    // 单次集成（内部分批）
+    @RequestMapping("/redis/run-batch")
+    public ResponseEntity<Result<String>> redisRunBatch(
+            @RequestBody List<? extends Map<String, ?>> opsParams
+    ) {
+        EtlContext etlContext = new EtlContext();
+        etlContext.setExtractStrategy("redis:strings");
+        etlContext.setLoadStrategy("db:upsert");
+        EtlMetrics stats = redisToDbOrch.runBatch(etlContext, opsParams);
+        return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
+    }
+
     // ===== 消息队列数据源集成 =====
     // 单次集成
     @RequestMapping("/mq/run")
     public ResponseEntity<Result<String>> mqRun(
-            @RequestBody List<? extends Map<String, ?>> filesParams
+            @RequestBody List<? extends Map<String, ?>> params
     ) {
         EtlContext etlContext = new EtlContext();
-        EtlMetrics stats = mqToDbOrch.run(etlContext, filesParams);
+        etlContext.setLoadStrategy("db:upsert");
+        EtlMetrics stats = mqToDbOrch.run(etlContext, params);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
     // 单次集成（内部分批）
     @RequestMapping("/mq/run-batch")
     public ResponseEntity<Result<String>> mqRunBatch(
-            @RequestBody List<? extends Map<String, ?>> filesParams
+            @RequestBody List<? extends Map<String, ?>> params
     ) {
         EtlContext etlContext = new EtlContext();
-        EtlMetrics stats = mqToDbOrch.runBatch(etlContext, filesParams);
+        etlContext.setLoadStrategy("db:upsert");
+        EtlMetrics stats = mqToDbOrch.runBatch(etlContext, params);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 }

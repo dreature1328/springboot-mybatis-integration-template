@@ -4,9 +4,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
 public class BatchUtils {
+    // 重复执行（无返回值）
+    public static void repeat(int count, Runnable action) {
+        if (count <= 0) return;
+        for (int i = 0; i < count; i++) {
+            action.run();
+        }
+    }
+
+    // 重复生成（有返回值）
+    public static <R> List<R> generate(int count, Supplier<R> supplier) {
+        if (count <= 0) return new ArrayList<>();
+        List<R> results = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            results.add(supplier.get());
+        }
+        return results;
+    }
+
+    // 重复生成（有返回值）
+    public static <R> List<R> flatGenerate(int count, Supplier<List<R>> supplier) {
+        if (count <= 0) return new ArrayList<>();
+        List<R> results = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            results.addAll(supplier.get());
+        }
+        return results;
+    }
+
     // 逐项处理（无返回值）
     public static <T> void processEach(Iterable<T> iterable, Consumer<T> processor) {
         if (iterable == null) return;

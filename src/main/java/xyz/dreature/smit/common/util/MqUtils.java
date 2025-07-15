@@ -1,11 +1,14 @@
 package xyz.dreature.smit.common.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -44,7 +47,28 @@ public class MqUtils {
         return props;
     }
 
-    // ===== 构建消息 =====
+    // 创建类型引用
+    public static <T> ParameterizedTypeReference<T> createTypeRef(Class<T> type) {
+        return ParameterizedTypeReference.forType(type);
+    }
+
+    // 创建列表类型引用
+    public static <E> ParameterizedTypeReference<List<E>> createListTypeRef(Class<E> elementType) {
+        JavaType javaType = TypeFactory.defaultInstance()
+                .constructCollectionType(List.class, elementType);
+        return ParameterizedTypeReference.forType(javaType);
+    }
+
+    // 创建映射类型引用
+    public static <K, V> ParameterizedTypeReference<Map<K, V>> createMapTypeRef(
+            Class<K> keyType, Class<V> valueType) {
+        JavaType javaType = TypeFactory.defaultInstance()
+                .constructMapType(Map.class, keyType, valueType);
+        return ParameterizedTypeReference.forType(javaType);
+    }
+
+    // ===== 构建与发送消息 =====
+    // 自定义消息构建方式而不使用内置消息转换器
     // 构建消息
     public static Message buildMessage(Object payload) throws TransformerException, IOException {
         return buildMessage(payload, (MessageProperties) null);
@@ -133,7 +157,6 @@ public class MqUtils {
         }
     }
 
-    // ===== 发送消息 =====
     // 同步发送消息
     public static void send(RabbitTemplate rabbitTemplate, Object payload, MessageProperties props, CorrelationData correlationData) throws IOException, TransformerException {
         Message message = buildMessage(payload, props);
@@ -155,18 +178,18 @@ public class MqUtils {
     }
 
     // ===== 接收与解析消息 =====
+    // 自定义消息解析方式而不使用内置消息转换器
     // 同步接收单条消息并解析
-    public static <T> T receive(RabbitTemplate rabbitTemplate, Class<T> targetType) throws IOException {
+    public static <T> T receive(RabbitTemplate rabbitTemplate, ParameterizedTypeReference<T> typeRef) throws IOException {
         Message message = rabbitTemplate.receive();
-        return parseMessage(message, targetType);
+        return parseMessage(message, typeRef);
     }
 
     // 同步接收多条消息并解析
-    public static <T> List<T> receive(RabbitTemplate rabbitTemplate, int count, Class<T> targetType) throws IOException {
+    public static <T> List<T> receive(RabbitTemplate rabbitTemplate, int count, ParameterizedTypeReference<T> typeRef) throws IOException {
         List<T> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Message message = rabbitTemplate.receive();
-            T parsedMessage = parseMessage(message, targetType);
+            T parsedMessage = receive(rabbitTemplate, typeRef);
             if (parsedMessage != null) {
                 result.add(parsedMessage);
             }
@@ -176,52 +199,76 @@ public class MqUtils {
 
     // 同步接收消息并返回字节数组（byte[]）
     public static byte[] receiveAsBytes(RabbitTemplate rabbitTemplate) throws IOException {
-        return receive(rabbitTemplate, byte[].class);
+        return receive(rabbitTemplate, new ParameterizedTypeReference<byte[]>() {
+        });
     }
 
     // 同步接收消息并返回字符串（String）
     public static String receiveAsString(RabbitTemplate rabbitTemplate) throws IOException {
-        return receive(rabbitTemplate, String.class);
+        return receive(rabbitTemplate, new ParameterizedTypeReference<String>() {
+        });
     }
 
     // 同步接收消息并返回 JSON（JsonNode）
     public static JsonNode receiveAsJson(RabbitTemplate rabbitTemplate) throws IOException {
-        return receive(rabbitTemplate, JsonNode.class);
+        return receive(rabbitTemplate, new ParameterizedTypeReference<JsonNode>() {
+        });
     }
 
     // 同步接收消息并返回 XML（Document）
     public static Document receiveAsXml(RabbitTemplate rabbitTemplate) throws IOException {
-        return receive(rabbitTemplate, Document.class);
+        return receive(rabbitTemplate, new ParameterizedTypeReference<Document>() {
+        });
+    }
+
+    // 同步接收消息并返回 List<T>
+    public static <T> List<T> receiveAsList(RabbitTemplate rabbitTemplate, Class<T> elementType) throws IOException {
+        JavaType javaType = TypeFactory.defaultInstance()
+                .constructCollectionType(List.class, elementType);
+        return receive(rabbitTemplate, ParameterizedTypeReference.forType(javaType));
     }
 
     // 解析消息为结构化类型
-    public static <T> T parseMessage(Message message, Class<T> targetType) throws IOException {
+    public static <T> T parseMessage(Message message, ParameterizedTypeReference<T> typeRef) throws IOException {
         if (message == null) return null;
+
         byte[] messageBytes = message.getBody();
         MessageProperties messageProperties = message.getMessageProperties();
         String contentType = messageProperties != null ? messageProperties.getContentType() : null;
+        JavaType javaType = TypeFactory.defaultInstance().constructType(typeRef.getType());
 
-        // 基于预定义类型解析
-        if (targetType == byte[].class) {
-            return targetType.cast(messageBytes);
-        } else if (targetType == String.class) {
-            return targetType.cast(parseString(messageBytes));
-        } else if (JsonNode.class.isAssignableFrom(targetType)) {
-            return targetType.cast(parseJson(messageBytes));
-        } else if (Document.class.isAssignableFrom(targetType)) {
-            return targetType.cast(parseXml(messageBytes));
-        } else if (targetType == Object.class && contentType != null) {
-            // 无明确预定义类型时，基于内容类型推测
-            if (contentType.contains("json")) {
-                return targetType.cast(parseJson(messageBytes));
-            } else if (contentType.contains("xml")) {
-                return targetType.cast(parseXml(messageBytes));
-            } else if (contentType.contains("text")) {
-                return targetType.cast(parseString(messageBytes));
+        // 1. 处理原始类型
+        Class<?> rawClass = javaType.getRawClass();
+        if (rawClass != null) {
+            if (rawClass == byte[].class) {
+                return (T) messageBytes;
+            } else if (rawClass == String.class) {
+                return (T) parseString(messageBytes);
+            } else if (JsonNode.class.isAssignableFrom(rawClass)) {
+                return (T) parseJson(messageBytes);
+            } else if (Document.class.isAssignableFrom(rawClass)) {
+                return (T) parseXml(messageBytes);
             }
         }
-        // 最终回退逻辑
-        throw new IOException("不受支持的类型解析");
+
+        // 2. 处理 Object 类型（根据内容类型推断）
+        if (javaType.hasRawClass(Object.class) && contentType != null) {
+            if (contentType.contains("json")) {
+                return (T) parseJson(messageBytes);
+            } else if (contentType.contains("xml")) {
+                return (T) parseXml(messageBytes);
+            } else if (contentType.contains("text")) {
+                return (T) parseString(messageBytes);
+            }
+            return (T) messageBytes; // 默认返回字节数组
+        }
+
+        // 3. 处理泛型类型（使用Jackson解析）
+        try {
+            return JsonUtils.DEFAULT_MAPPER.readValue(messageBytes, javaType);
+        } catch (JsonProcessingException e) {
+            throw new IOException("泛型JSON解析失败: " + javaType, e);
+        }
     }
 
     // 解析字节数组为字符串（String）（默认编码）
@@ -305,6 +352,4 @@ public class MqUtils {
     public static void purgeQueue(RabbitAdmin rabbitAdmin, String queueName) {
         rabbitAdmin.purgeQueue(queueName, false);
     }
-
-
 }

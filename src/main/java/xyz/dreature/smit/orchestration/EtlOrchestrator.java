@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-// 编排器
+// 流程编排器
 public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestrator {
     // ETL 组件
     private Extractor<S> extractor;
@@ -36,6 +36,7 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
         metrics.recordSourceUnits(params.size());
 
         try {
+            System.out.println("ETL 流程开始运行，任务 ID：" + context.getJobId());
             // 1. 抽取阶段（逐项 / 单批执行）
             List<S> extractedData = extractor.extractBatch(context, params);
             metrics.markExtractEnd();
@@ -66,6 +67,7 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
         metrics.recordSourceUnits(params.size());
 
         try {
+            System.out.println("ETL 流程开始运行，任务 ID：" + context.getJobId());
             // 1. 抽取阶段（逐项 / 分批执行）
             List<S> extractedData = BatchUtils.flatMapBatch(
                     params,

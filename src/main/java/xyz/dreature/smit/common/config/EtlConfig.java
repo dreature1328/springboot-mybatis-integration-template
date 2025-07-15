@@ -4,13 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import xyz.dreature.smit.common.model.entity.Data;
-import xyz.dreature.smit.component.extractor.DbExtractor;
-import xyz.dreature.smit.component.extractor.FileExtractor;
-import xyz.dreature.smit.component.extractor.MockExtractor;
-import xyz.dreature.smit.component.extractor.MqExtractor;
+import xyz.dreature.smit.component.extractor.*;
 import xyz.dreature.smit.component.loader.DbLoader;
 import xyz.dreature.smit.component.transformer.IdentityTransformer;
-import xyz.dreature.smit.component.transformer.JsonDataTransformer;
+import xyz.dreature.smit.component.transformer.JsonEntityTransformer;
 import xyz.dreature.smit.component.transformer.XmlTransformer;
 import xyz.dreature.smit.orchestration.EtlOrchestrator;
 
@@ -21,7 +18,7 @@ public class EtlConfig {
     @Bean("mockToDbOrch")
     public EtlOrchestrator<JsonNode, Data, Long> mockToDbOrchestrator(
             MockExtractor extractor,
-            JsonDataTransformer transformer,
+            JsonEntityTransformer transformer,
             DbLoader loader) {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
@@ -29,7 +26,7 @@ public class EtlConfig {
     @Bean("jsonFileToDbOrch")
     public EtlOrchestrator<JsonNode, Data, Long> jsonFileToDbOrchestrator(
             FileExtractor extractor,
-            JsonDataTransformer transformer,
+            JsonEntityTransformer transformer,
             DbLoader loader) {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
@@ -45,7 +42,7 @@ public class EtlConfig {
     @Bean("apiToDbOrch")
     public EtlOrchestrator<JsonNode, Data, Long> apiToDbOrchestrator(
             MockExtractor extractor,
-            JsonDataTransformer transformer,
+            JsonEntityTransformer transformer,
             DbLoader loader) {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
@@ -58,10 +55,18 @@ public class EtlConfig {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
 
+    @Bean("redisToDbOrch")
+    public EtlOrchestrator<Data, Data, Long> redisToDbOrchestrator(
+            RedisExtractor extractor,
+            IdentityTransformer transformer,
+            DbLoader loader) {
+        return new EtlOrchestrator<>(extractor, transformer, loader);
+    }
+
     @Bean("mqToDbOrch")
-    public EtlOrchestrator<JsonNode, Data, Long> mqToDbOrchestrator(
+    public EtlOrchestrator<Data, Data, Long> mqToDbOrchestrator(
             MqExtractor extractor,
-            JsonDataTransformer transformer,
+            IdentityTransformer transformer,
             DbLoader loader) {
 
         return new EtlOrchestrator<>(extractor, transformer, loader);

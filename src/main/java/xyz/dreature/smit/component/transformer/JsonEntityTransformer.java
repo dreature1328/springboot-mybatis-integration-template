@@ -8,9 +8,9 @@ import java.util.function.Function;
 
 // JSON-实体转换器
 @Component
-public class JsonDataTransformer extends JsonTransformer<Data> {
+public class JsonEntityTransformer extends JsonTransformer<Data> {
 
-    public JsonDataTransformer() {
+    public JsonEntityTransformer() {
         super(new Function<JsonNode, Data>() {
             @Override
             public Data apply(JsonNode itemNode) {
