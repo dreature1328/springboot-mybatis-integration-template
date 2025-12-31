@@ -5,9 +5,6 @@ import java.util.List;
 
 // 数据库服务接口
 public interface DbService<T, ID extends Serializable> {
-    // 解析 ID
-    List<ID> parseIdsFromString(String ids);
-
     // 查询总数
     int countAll();
 

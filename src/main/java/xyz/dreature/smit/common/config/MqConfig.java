@@ -1,13 +1,11 @@
 package xyz.dreature.smit.common.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import xyz.dreature.smit.common.model.entity.Data;
 import xyz.dreature.smit.common.util.MqUtils;
 import xyz.dreature.smit.service.MqService;
@@ -18,6 +16,7 @@ import xyz.dreature.smit.service.impl.MqServiceImpl;
 public class MqConfig {
     // 显式声明泛型 Bean，以解决泛型擦除导致的依赖注入失败的问题
     @Bean
+    @Lazy
     public MqService<Data, Data> mqService(RabbitTemplate rabbitTemplate) {
         return new MqServiceImpl<>(
                 rabbitTemplate,
@@ -28,6 +27,7 @@ public class MqConfig {
 
     // 配置消息转换器，需与配置文件一致
     @Bean
+    @Lazy
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }

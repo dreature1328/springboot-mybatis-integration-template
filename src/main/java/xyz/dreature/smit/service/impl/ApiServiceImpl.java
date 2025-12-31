@@ -5,33 +5,36 @@ import xyz.dreature.smit.common.util.HttpUtils;
 import xyz.dreature.smit.service.ApiService;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 // API 服务
 public class ApiServiceImpl<T> implements ApiService<T> {
     // 请求 URL、方法、头
-    private Class<T> responseType;
-    private String baseUrl;
-    private String method;
-    private Map<String, String> headers;
+    private final Class<T> responseType;
+    private final String baseUrl;
+    private final String method;
+    private final Map<String, String> headers;
+
+    // 线程池
+    private final Executor executor;
 
     public ApiServiceImpl(
             Class<T> responseType,
             String baseUrl,
             String method,
-            Map<String, String> headers) {
-
+            Map<String, String> headers,
+            Executor executor
+    ) {
         this.responseType = responseType;
         this.baseUrl = baseUrl;
         this.method = method;
         this.headers = headers;
+        this.executor = executor;
     }
 
     // ===== API 抽取 =====
     // 单次调用
+    @Override
     public T call(Map<String, ?> requestParams) {
         T response = null;
         try {
@@ -43,17 +46,19 @@ public class ApiServiceImpl<T> implements ApiService<T> {
     }
 
     // 依次同步调用
+    @Override
     public List<T> call(Map<String, ?>... requestsParams) {
         return BatchUtils.mapEach(new ArrayList<>(Arrays.asList(requestsParams)), this::call);
     }
 
     // 单批异步调用
+    @Override
     public List<T> callBatch(List<? extends Map<String, ?>> requestsParams) {
         List<CompletableFuture<T>> futures = new ArrayList<>();
         try {
             // 添加异步请求任务
             for (Map<String, ?> requestParams : requestsParams) {
-                CompletableFuture<T> future = HttpUtils.executeAsync(baseUrl, method, headers, requestParams, responseType);
+                CompletableFuture<T> future = HttpUtils.executeAsync(baseUrl, method, headers, requestParams, responseType, executor);
                 futures.add(future);
             }
 
@@ -80,6 +85,7 @@ public class ApiServiceImpl<T> implements ApiService<T> {
     }
 
     // 分批异步调用
+    @Override
     public List<T> callBatch(List<? extends Map<String, ?>> requestsParams, int batchSize) {
         return BatchUtils.flatMapBatch(requestsParams, batchSize, this::callBatch);
     }

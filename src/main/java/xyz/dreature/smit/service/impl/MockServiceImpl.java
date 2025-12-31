@@ -13,12 +13,12 @@ import java.util.*;
 // 模拟服务
 @Service
 public class MockServiceImpl implements MockService {
-
+    private final SecureRandom random = new SecureRandom();
     @Autowired
     private ObjectMapper objectMapper;
-    private SecureRandom random = new SecureRandom();
 
     // 生成模拟数据（单条）
+    @Override
     public Data generateMockData() {
         return new Data(
                 // 取 UUID 的高 64 位并转换为非负长整型值
@@ -35,6 +35,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成模拟数据（多条）
+    @Override
     public List<Data> generateMockData(int count) {
         List<Data> dataList = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -44,6 +45,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成随机字符串
+    @Override
     public String generateRandomString(int length) {
         String CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         StringBuilder sb = new StringBuilder(length);
@@ -55,6 +57,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成模拟请求参数（单组）
+    @Override
     public Map<String, ?> generateMockParams() {
         Map<String, Integer> params = new HashMap<>();
         params.put("dataSize", random.nextInt(100));
@@ -62,6 +65,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成模拟请求参数（多组）
+    @Override
     public List<Map<String, ?>> generateMockParams(int count) {
         List<Map<String, ?>> params = new ArrayList<>();
         for (int i = 0; i < count; i++) {
@@ -71,6 +75,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成模拟响应（单个）
+    @Override
     public JsonNode generateMockResponse(int dataSize) {
         try {
             // 构建响应结构
@@ -90,6 +95,7 @@ public class MockServiceImpl implements MockService {
     }
 
     // 生成模拟响应（多个）
+    @Override
     public List<JsonNode> generateMockResponses(int count, int dataSize) {
         List<JsonNode> responses = new ArrayList<>();
         for (int i = 0; i < count; i++) {

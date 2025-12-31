@@ -1,43 +1,57 @@
 package xyz.dreature.smit.component.extractor;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import xyz.dreature.smit.common.model.context.EtlContext;
-import xyz.dreature.smit.common.util.JsonUtils;
-import xyz.dreature.smit.common.util.XmlUtils;
+import xyz.dreature.smit.strategy.ExtractStrategy;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 // 文件抽取器
 @Component
+@Lazy
 public class FileExtractor<S> implements Extractor<S> {
-    // 策略常量
-    private static final String STRATEGY_JSON = "file:json";
-    private static final String STRATEGY_XML = "file:xml";
-    private static final String STRATEGY_CSV = "file:csv";
+    // 文件抽取策略集合
+    private final Map<String, ExtractStrategy<S>> strategyMap;
 
-    // 单项抽取
-    public List<S> extract(EtlContext context, Map<String, ?> fileParams) {
-        List<S> result = new ArrayList<>();
-        String filePath = (String) fileParams.get("filePath");
-        switch (context.getExtractStrategy().toLowerCase()) {
-            case STRATEGY_JSON:
-                result.add((S) JsonUtils.parseFile(filePath));
-                return result;
-            case STRATEGY_XML:
-                result.add((S) XmlUtils.parseFile(filePath));
-                return result;
-            default:
-                throw new IllegalArgumentException("不支持的抽取策略: " + context.getExtractStrategy());
-        }
+    // 注册策略（文件相关）
+    @Autowired
+    public FileExtractor(List<ExtractStrategy<S>> strategies) {
+        this.strategyMap = strategies.stream()
+                .filter(strategy -> strategy.getStrategyName().startsWith("file:"))
+                .collect(Collectors.toMap(
+                        strategy -> strategy.getStrategyName(),
+                        Function.identity()
+                ));
     }
 
-    // 单批抽取（并行）
+    // 单项抽取
+    @Override
+    public List<S> extract(EtlContext context, Map<String, ?> fileParams) {
+        String strategyName = context.getExtractStrategy();
+        ExtractStrategy<S> strategy = strategyMap.get(strategyName);
+
+        if (strategy == null) {
+            throw new IllegalArgumentException("未知文件抽取策略: " + strategyName);
+        }
+
+        return strategy.extract(fileParams);
+    }
+
+    // 单批抽取（并发）
+    @Override
     public List<S> extractBatch(EtlContext context, List<? extends Map<String, ?>> filesParams) {
-        return filesParams.parallelStream()
-                .flatMap(fileParams -> extract(context, fileParams).stream())
-                .collect(Collectors.toList());
+        String strategyName = context.getExtractStrategy();
+        ExtractStrategy<S> strategy = strategyMap.get(strategyName);
+
+        if (strategy == null) {
+            throw new IllegalArgumentException("未知文件抽取策略: " + strategyName);
+        }
+
+        return strategy.extractBatch(filesParams);
     }
 }

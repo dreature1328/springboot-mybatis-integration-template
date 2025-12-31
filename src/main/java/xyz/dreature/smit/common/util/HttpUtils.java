@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 
 public class HttpUtils {
     // ===== 常量 / 配置 =====
@@ -143,7 +144,7 @@ public class HttpUtils {
         return execute(url, method, headers, requestParams, Document.class);
     }
 
-    // 异步执行流程（发起 HTTP 请求 + 解析响应内容）
+    // 异步执行流程（发起 HTTP 请求 + 解析响应内容 + 默认线程池）
     public static <T> CompletableFuture<T> executeAsync(String url, String method, Map<String, ?> headers, Map<String, ?> requestParams, Class<T> targetType) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -152,6 +153,17 @@ public class HttpUtils {
                 throw new CompletionException(e);
             }
         });
+    }
+
+    // 异步执行流程（发起 HTTP 请求 + 解析响应内容 + 自定义线程池）
+    public static <T> CompletableFuture<T> executeAsync(String url, String method, Map<String, ?> headers, Map<String, ?> requestParams, Class<T> targetType, Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return execute(url, method, headers, requestParams, targetType);
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        }, executor);
     }
 
     // 异步执行流程并返回字节数组（byte[]）

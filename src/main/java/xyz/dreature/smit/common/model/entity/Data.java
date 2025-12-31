@@ -1,12 +1,30 @@
 package xyz.dreature.smit.common.model.entity;
 
-// 实体
+import javax.validation.constraints.*;
+
+// 数据实体
 public class Data {
-    // ===== 属性 =====
+    // ===== 字段 =====
+    @NotNull(message = "ID 不能为空")
+    @Min(value = 1, message = "ID 必须为正")
+    @Max(value = Long.MAX_VALUE, message = "ID 范围受限")
     private Long id;              // 唯一标识符
+
+    @NotNull(message = "整型字段不能为空")
+    @Min(value = 0, message = "整型字段不能为负")
+    @Max(value = Integer.MAX_VALUE, message = "整型字段范围受限")
     private Integer numericValue; // 整型数值
+
+    @NotNull(message = "浮点字段不能为空")
+    @DecimalMin(value = "0.0", message = "浮点字段不能为负")
+    @Digits(integer = 15, fraction = 6, message = "浮点字段整数位不超过 15 位，小数位不超过 6 位")
     private Double decimalValue;  // 浮点数值
+
+    @NotBlank(message = "文本字段不能为空")
+    @Size(min = 1, max = 255, message = "文本字段范围受限")
     private String textContent;   // 文本内容
+
+    @NotNull(message = "布尔字段不能为空")
     private Boolean activeFlag;   // 激活标志
 
     // ===== 构造方法 =====
@@ -75,13 +93,8 @@ public class Data {
 
     // ===== 其他 =====
     // 字符串表示
+    @Override
     public String toString() {
-        return "Data{" +
-                "id=" + id +
-                ", numericValue=" + numericValue +
-                ", decimalValue=" + decimalValue +
-                ", textContent='" + textContent + '\'' +
-                ", activeFlag=" + activeFlag +
-                '}';
+        return "Data{" + "id=" + id + ", numericValue=" + numericValue + ", decimalValue=" + decimalValue + ", textContent='" + textContent + '\'' + ", activeFlag=" + activeFlag + '}';
     }
 }

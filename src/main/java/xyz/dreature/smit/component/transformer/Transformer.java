@@ -2,12 +2,27 @@ package xyz.dreature.smit.component.transformer;
 
 import xyz.dreature.smit.common.model.context.EtlContext;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 // 转换器接口
 public interface Transformer<S, T> {
+    // 转换器键
+    default String getKey() {
+        Type superClass = getClass().getGenericInterfaces()[0];
+        if (superClass instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) superClass;
+            Type[] typeArgs = parameterizedType.getActualTypeArguments();
+            String sourceType = typeArgs[0].getTypeName();
+            String targetType = typeArgs[1].getTypeName();
+            return sourceType + "->" + targetType;
+        }
+        return getClass().getSimpleName();
+    }
+
     // 单项转换
     List<T> transform(EtlContext context, S sourceData);
 
@@ -16,7 +31,7 @@ public interface Transformer<S, T> {
         if (sourceData == null || sourceData.isEmpty()) {
             return Collections.emptyList();
         }
-        return sourceData.stream()
+        return sourceData.parallelStream()
                 .map(item -> transform(context, item))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());

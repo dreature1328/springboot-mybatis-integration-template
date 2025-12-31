@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.dreature.smit.mapper.DataMapper">
+    <!-- ===== 结果映射配置 ===== -->
     <!-- 表和类映射关系 -->
     <resultMap id="dataMap" type="data">
         <id property="id" column="id"/>
@@ -11,6 +12,7 @@
         <result property="activeFlag" column="active_flag"/>
     </resultMap>
 
+    <!-- ===== 复用 SQL 片段 ===== -->
     <!-- 表结构 -->
     <sql id="table">`data_table`</sql>
     <sql id="columns">`id`, `numeric_value`, `decimal_value`, `text_content`, `active_flag`</sql>
@@ -23,6 +25,7 @@
     <sql id="set">`numeric_value` = #{numericValue}, `decimal_value` = #{decimalValue}, `text_content` = #{textContent}, `active_flag` = #{activeFlag}</sql>
     <sql id="conflictSet">`numeric_value` = VALUES(`numeric_value`), `decimal_value` = VALUES(`decimal_value`), `text_content` = VALUES(`text_content`), `active_flag` = VALUES(`active_flag`)</sql>
 
+    <!-- ===== 通用基础操作 ===== -->
     <!-- 查询总数 -->
     <select id="countAll" resultType="int">
         SELECT COUNT(*)

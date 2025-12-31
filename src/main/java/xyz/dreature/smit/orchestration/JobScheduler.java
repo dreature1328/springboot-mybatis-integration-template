@@ -17,13 +17,11 @@ import java.util.concurrent.ScheduledFuture;
 @Component
 public class JobScheduler {
 
+    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
     @Autowired
     private ApplicationContext applicationContext;
-
     @Autowired
     private TaskScheduler taskScheduler;
-
-    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     // 添加新任务到调度池
     public void scheduleJob(Job job) {

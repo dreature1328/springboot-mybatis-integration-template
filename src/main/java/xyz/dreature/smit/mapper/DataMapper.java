@@ -5,4 +5,5 @@ import xyz.dreature.smit.common.model.entity.Data;
 
 @Mapper
 public interface DataMapper extends BaseMapper<Data, Long> {
+    // ===== 业务扩展操作 =====
 }

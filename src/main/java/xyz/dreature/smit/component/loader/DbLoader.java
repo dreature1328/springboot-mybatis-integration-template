@@ -15,6 +15,7 @@ public class DbLoader<T, ID extends Serializable> implements Loader<T, ID> {
     private DbService<T, ID> dbService;
 
     // 单项加载
+    @Override
     public int load(EtlContext context, T targetData) {
         String strategy = context.getLoadStrategy();
         int affectedRows;
@@ -35,6 +36,7 @@ public class DbLoader<T, ID extends Serializable> implements Loader<T, ID> {
     }
 
     // 分批加载
+    @Override
     public int loadBatch(EtlContext context, List<T> targetData) {
         String strategy = context.getLoadStrategy();
         int affectedRows;

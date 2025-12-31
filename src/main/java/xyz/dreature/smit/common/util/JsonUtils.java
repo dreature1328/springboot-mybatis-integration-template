@@ -172,7 +172,7 @@ public class JsonUtils {
                     System.out.println(indent + "}");
                 } else {
                     // 非嵌套对象
-                    System.out.println(indent + key + " = " + value.toString());
+                    System.out.println(indent + key + " = " + value);
                 }
             });
         }

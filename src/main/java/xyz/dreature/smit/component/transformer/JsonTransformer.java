@@ -3,6 +3,7 @@ package xyz.dreature.smit.component.transformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import xyz.dreature.smit.common.model.context.EtlContext;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,14 +15,23 @@ import java.util.stream.StreamSupport;
 
 // JSON 转换器
 public abstract class JsonTransformer<T> implements Transformer<JsonNode, T> {
-
     protected Function<JsonNode, T> itemParser;
 
     public JsonTransformer(Function<JsonNode, T> itemParser) {
         this.itemParser = itemParser;
     }
 
+    // 转换器键
+    @Override
+    public String getKey() {
+        return JsonNode.class.getName() + "->" +
+                ((Class) ((ParameterizedType) getClass()
+                        .getGenericSuperclass())
+                        .getActualTypeArguments()[0]).getName();
+    }
+
     // 单项转换
+    @Override
     public List<T> transform(EtlContext context, JsonNode jsonNode) {
         if (jsonNode == null) {
             return Collections.emptyList();
@@ -40,12 +50,13 @@ public abstract class JsonTransformer<T> implements Transformer<JsonNode, T> {
     }
 
     // 流式转换
+    @Override
     public List<T> transformStream(EtlContext context, List<JsonNode> jsonNodes) {
         if (jsonNodes == null || jsonNodes.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return jsonNodes.stream()
+        return jsonNodes.parallelStream()
                 .filter(Objects::nonNull)
                 .flatMap(jsonNode -> {
                     JsonNode arrayNode = jsonNode.path("data");

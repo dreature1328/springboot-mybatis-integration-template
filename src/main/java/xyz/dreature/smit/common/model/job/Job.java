@@ -6,7 +6,7 @@ import java.util.UUID;
 
 // 任务
 public class Job {
-    // ===== 属性 =====
+    // ===== 字段 =====
     private String jobId;          // 任务 ID
     private String jobName;        // 任务名称
     private String cronExpression; // cron 表达式

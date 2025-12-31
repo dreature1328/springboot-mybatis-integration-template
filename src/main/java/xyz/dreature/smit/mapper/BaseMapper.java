@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 public interface BaseMapper<T, ID extends Serializable> {
+    // ===== 通用基础操作 =====
     // 查询总数
     int countAll();
 

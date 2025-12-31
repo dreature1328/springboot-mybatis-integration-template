@@ -15,9 +15,9 @@ import java.util.Map;
 // 流程编排器
 public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestrator {
     // ETL 组件
-    private Extractor<S> extractor;
-    private Transformer<S, T> transformer;
-    private Loader<T, ID> loader;
+    private final Extractor<S> extractor;
+    private final Transformer<S, T> transformer;
+    private final Loader<T, ID> loader;
 
     public EtlOrchestrator(
             Extractor<S> extractor,
@@ -30,6 +30,7 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
     }
 
     // 运行流程（逐项 / 单批执行）
+    @Override
     public EtlMetrics run(EtlContext context, List<? extends Map<String, ?>> params) {
         EtlMetrics metrics = new EtlMetrics();
         metrics.markExtractStart();
@@ -61,6 +62,7 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
     }
 
     // 运行流程（逐项 / 分批执行）
+    @Override
     public EtlMetrics runBatch(EtlContext context, List<? extends Map<String, ?>> params) {
         EtlMetrics metrics = new EtlMetrics();
         metrics.markExtractStart();

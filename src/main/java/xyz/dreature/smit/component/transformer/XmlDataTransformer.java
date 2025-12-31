@@ -9,9 +9,8 @@ import java.util.function.Function;
 
 // XML-实体转换器
 @Component
-public class XmlEntityTransformer extends XmlTransformer<Data> {
-
-    public XmlEntityTransformer() {
+public class XmlDataTransformer extends XmlTransformer<Data> {
+    public XmlDataTransformer() {
         // 使用匿名内部类
         super(new Function<Element, Data>() {
             @Override

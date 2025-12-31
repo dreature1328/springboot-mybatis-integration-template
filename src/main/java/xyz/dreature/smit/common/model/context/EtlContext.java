@@ -1,10 +1,8 @@
 package xyz.dreature.smit.common.model.context;
 
-import java.util.UUID;
-
 // ETL 上下文
 public class EtlContext {
-    // ===== 属性 =====
+    // ===== 字段 =====
     private String jobId;
 
     private int extractBatchSize; // 抽取批大小
@@ -12,8 +10,8 @@ public class EtlContext {
     private int loadBatchSize; // 加载批大小
 
     private String extractStrategy; // 对应抽取器中的策略常量
-    private String transformStrategy; // 对应转换器中的策略常量
-    private String loadStrategy; // 对应加载器中的策略常量
+    private String transformStrategy; // 对应转换器中的策略常量（保留）
+    private String loadStrategy; // 对应加载器中的策略常量（保留）
 
     // ===== 构造方法 =====
     // 无参构造器

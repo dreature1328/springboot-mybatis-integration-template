@@ -5,7 +5,7 @@ import java.time.Instant;
 
 // 响应结果
 public class Result<T> implements Serializable {
-    // ===== 属性 =====
+    // ===== 字段 =====
     private boolean success; // 操作是否成功
     private String code;     // 业务状态码
     private String message;  // 人类可读消息
@@ -52,6 +52,10 @@ public class Result<T> implements Serializable {
     // ===== 错误响应 =====
     public static <T> Result<T> error(String code, String message) {
         return new Result<>(false, code, message, null);
+    }
+
+    public static <T> Result<T> error(String code, String message, T data) {
+        return new Result<>(false, code, message, data);
     }
 
     // ===== Getter 与 Setter 方法 =====
