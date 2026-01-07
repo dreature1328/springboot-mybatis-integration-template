@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.smit.mapper.db2.AdvancedMapper">
+    <!-- ===== 结果映射配置 ===== -->
+    <!-- 表和类映射关系 -->
+    <resultMap id="advancedMap" type="advancedEntity">
+        <!-- 常规类型 -->
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="status" column="status"/>
+        <!-- JSON 类型 -->
+        <result property="attributes" column="attributes"
+                typeHandler="jsonTypeHandler"/>
+        <!-- 数组类型 -->
+        <result property="tags" column="tags"
+                typeHandler="arrayTypeHandler"/>
+        <!-- 日期类型 -->
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- ===== 复用 SQL 片段 ===== -->
+    <!-- 表结构 -->
+    <sql id="table">advanced_table</sql>
+    <sql id="columns">
+        id, code, name, status, attributes, tags, created_at, updated_at
+    </sql>
+
+    <!-- 值映射 -->
+    <sql id="values">
+        #{id}, #{code}, #{name}, #{status},
+        #{attributes, typeHandler=xyz.dreature.smit.common.handler.JsonTypeHandler},
+        #{tags, typeHandler=xyz.dreature.smit.common.handler.ArrayTypeHandler},
+        #{createdAt}, #{updatedAt}
+    </sql>
+
+    <sql id="itemValues">
+        #{item.id}, #{item.code}, #{item.name}, #{item.status},
+        #{item.attributes, typeHandler=xyz.dreature.smit.common.handler.JsonTypeHandler},
+        #{item.tags, typeHandler=xyz.dreature.smit.common.handler.ArrayTypeHandler},
+        #{item.createdAt}, #{item.updatedAt}
+    </sql>
+
+    <!-- 更新设置 -->
+    <sql id="set">
+        code = #{code},
+        name = #{name},
+        status = #{status},
+        attributes = #{attributes, typeHandler=xyz.dreature.smit.common.handler.JsonTypeHandler},
+        tags = #{tags, typeHandler=xyz.dreature.smit.common.handler.ArrayTypeHandler},
+        updated_at = CURRENT_TIMESTAMP
+    </sql>
+
+    <sql id="conflictSet">
+        name = EXCLUDED.name,
+        status = EXCLUDED.status,
+        attributes = EXCLUDED.attributes,
+        tags = EXCLUDED.tags,
+        updated_at = CURRENT_TIMESTAMP
+    </sql>
+
+    <!-- ===== 通用基础操作 ===== -->
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全表 -->
+    <select id="selectAll" resultMap="advancedMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="int" resultMap="advancedMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY RANDOM()
+        LIMIT #{count}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" resultMap="advancedMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 单项查询 -->
+    <select id="selectById" parameterType="long" resultMap="advancedMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE id = #{id}
+    </select>
+
+    <!-- 单批查询 -->
+    <select id="selectBatchByIds" resultMap="advancedMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <!-- 单项插入 -->
+    <insert id="insert" parameterType="advancedEntity">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+    </insert>
+
+    <!-- 单批插入 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+    </insert>
+
+    <!-- 单项更新 -->
+    <update id="update" parameterType="advancedEntity">
+        UPDATE <include refid="table"/>
+        SET <include refid="set"/>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 单批更新 -->
+    <update id="updateBatch" parameterType="list">
+        UPDATE <include refid="table"/>
+        SET
+        code = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.code}
+        </foreach>
+        END,
+        name = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.name}
+        </foreach>
+        END,
+        status = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.status}
+        </foreach>
+        END,
+        attributes = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.attributes, typeHandler=xyz.dreature.smit.common.handler.JsonTypeHandler}
+        </foreach>
+        END,
+        tags = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.tags, typeHandler=xyz.dreature.smit.common.handler.ArrayTypeHandler}
+        </foreach>
+        END,
+        updated_at = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单项插入或更新 -->
+    <insert id="upsert" parameterType="advancedEntity">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+        ON CONFLICT (id) DO UPDATE
+        SET <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单批插入或更新 -->
+    <insert id="upsertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+        ON CONFLICT (id) DO UPDATE
+        SET <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单项删除 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM <include refid="table"/>
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 单批删除 -->
+    <delete id="deleteBatchByIds" parameterType="list">
+        DELETE FROM <include refid="table"/>
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 清空 -->
+    <update id="truncate">
+        TRUNCATE TABLE <include refid="table"/> RESTART IDENTITY
+    </update>
+</mapper>

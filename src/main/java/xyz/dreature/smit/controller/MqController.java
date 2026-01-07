@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.dreature.smit.common.model.entity.Data;
+import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.vo.Result;
 import xyz.dreature.smit.service.MqService;
 
@@ -23,7 +23,7 @@ import java.util.List;
 @Validated
 public class MqController {
     @Autowired
-    private MqService<Data, Data> mqService;
+    private MqService<StandardEntity, StandardEntity> mqService;
 
     // ===== 消息队列抽取 =====
     // 查询总数
@@ -38,12 +38,12 @@ public class MqController {
 
     // 依次接收（定数）
     @RequestMapping("/receive")
-    public ResponseEntity<Result<List<Data>>> receive(
+    public ResponseEntity<Result<List<StandardEntity>>> receive(
             @RequestParam(name = "count", defaultValue = "1")
             @Positive(message = "接收数量必须为正")
             int count
     ) {
-        List<Data> messages = mqService.receive(count);
+        List<StandardEntity> messages = mqService.receive(count);
         int resultCount = messages.size();
         String message = String.format("收到 %d 条消息", resultCount);
         log.info("消息依次接收完成，收到：{}", resultCount);
@@ -52,12 +52,12 @@ public class MqController {
 
     // 依次接收（全部）
     @RequestMapping("/receive-batch")
-    public ResponseEntity<Result<List<Data>>> receiveBatch(
+    public ResponseEntity<Result<List<StandardEntity>>> receiveBatch(
             @RequestParam(name = "count", defaultValue = "1")
             @Positive(message = "接收数量必须为正")
             int count
     ) {
-        List<Data> messages = mqService.receiveBatch(count);
+        List<StandardEntity> messages = mqService.receiveBatch(count);
         int resultCount = messages.size();
         String message = String.format("收到 %d 条消息", resultCount);
         log.info("消息依次接收完成，收到：{}", resultCount);
@@ -70,7 +70,7 @@ public class MqController {
     public ResponseEntity<Result<Void>> send(
             @RequestBody
             @NotEmpty(message = "发送的载荷不能为空")
-            List<Data> payloads
+            List<StandardEntity> payloads
     ) {
         int total = payloads.size();
         int successCount = mqService.sendWithConverter(payloads);
@@ -84,7 +84,7 @@ public class MqController {
     public ResponseEntity<Result<Void>> sendBatch(
             @RequestBody
             @NotEmpty(message = "发送的载荷不能为空")
-            List<Data> payloads,
+            List<StandardEntity> payloads,
 
             @RequestParam(name = "batch-size", defaultValue = "100")
             @Positive(message = "批大小必须为正")

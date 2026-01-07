@@ -1,7 +1,8 @@
 // orchestrator/EtlJobOrchestrator.java
 package xyz.dreature.smit.orchestration;
 
-import xyz.dreature.smit.common.model.context.EtlContext;
+import lombok.extern.slf4j.Slf4j;
+import xyz.dreature.smit.common.model.context.Context;
 import xyz.dreature.smit.common.model.metrics.EtlMetrics;
 import xyz.dreature.smit.common.util.BatchUtils;
 import xyz.dreature.smit.component.extractor.Extractor;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 // 流程编排器
+@Slf4j
 public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestrator {
     // ETL 组件
     private final Extractor<S> extractor;
@@ -31,13 +33,13 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
 
     // 运行流程（逐项 / 单批执行）
     @Override
-    public EtlMetrics run(EtlContext context, List<? extends Map<String, ?>> params) {
+    public EtlMetrics run(Context context, List<? extends Map<String, Object>> params) {
         EtlMetrics metrics = new EtlMetrics();
         metrics.markExtractStart();
         metrics.recordSourceUnits(params.size());
 
         try {
-            System.out.println("ETL 流程开始运行，任务 ID：" + context.getJobId());
+            log.info("ETL 流程开始运行，任务 ID：{}", context.getJobId());
             // 1. 抽取阶段（逐项 / 单批执行）
             List<S> extractedData = extractor.extractBatch(context, params);
             metrics.markExtractEnd();
@@ -63,13 +65,13 @@ public class EtlOrchestrator<S, T, ID extends Serializable> implements Orchestra
 
     // 运行流程（逐项 / 分批执行）
     @Override
-    public EtlMetrics runBatch(EtlContext context, List<? extends Map<String, ?>> params) {
+    public EtlMetrics runBatch(Context context, List<? extends Map<String, Object>> params) {
         EtlMetrics metrics = new EtlMetrics();
         metrics.markExtractStart();
         metrics.recordSourceUnits(params.size());
 
         try {
-            System.out.println("ETL 流程开始运行，任务 ID：" + context.getJobId());
+            log.info("ETL 流程开始运行，任务 ID：{}", context.getJobId());
             // 1. 抽取阶段（逐项 / 分批执行）
             List<S> extractedData = BatchUtils.flatMapBatch(
                     params,

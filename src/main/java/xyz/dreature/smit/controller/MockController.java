@@ -8,13 +8,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.dreature.smit.common.model.entity.Data;
+import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.vo.Result;
 import xyz.dreature.smit.service.MockService;
 
 import javax.validation.constraints.Positive;
 import java.util.List;
-import java.util.Map;
 
 // 测试接口（模拟操作）
 @Slf4j
@@ -27,31 +26,31 @@ public class MockController {
 
     // 生成模拟数据
     @RequestMapping("/generate-data")
-    public ResponseEntity<Result<List<Data>>> generateMockData(
+    public ResponseEntity<Result<List<StandardEntity>>> generateMockData(
             @RequestParam(name = "count", defaultValue = "10")
             @Positive(message = "生成数量必须为正")
             int count
     ) {
-        List<Data> result = mockService.generateMockData(count);
+        List<StandardEntity> result = mockService.generateMockData(count);
         int resultCount = result.size();
         String message = String.format("生成 %d 条数据", resultCount);
         log.info("模拟数据生成完成，生成：{}", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-    // 生成模拟参数
-    @RequestMapping("/generate-params")
-    public ResponseEntity<Result<List<Map<String, ?>>>> generateMockParams(
-            @RequestParam(name = "count", defaultValue = "10")
-            @Positive(message = "生成数量必须为正")
-            int count
-    ) {
-        List<Map<String, ?>> result = mockService.generateMockParams(count);
-        int resultCount = result.size();
-        String message = String.format("生成 %d 组参数", resultCount);
-        log.info("模拟参数生成完成，生成：{}", resultCount);
-        return ResponseEntity.ok().body(Result.success(message, result));
-    }
+//    // 生成模拟参数
+//    @RequestMapping("/generate-params")
+//    public ResponseEntity<Result<List<Map<String, ?>>>> generateMockParams(
+//            @RequestParam(name = "count", defaultValue = "10")
+//            @Positive(message = "生成数量必须为正")
+//            int count
+//    ) {
+//        List<Map<String, Object>> result = mockService.generateMockParams(count);
+//        int resultCount = result.size();
+//        String message = String.format("生成 %d 组参数", resultCount);
+//        log.info("模拟参数生成完成，生成：{}", resultCount);
+//        return ResponseEntity.ok().body(Result.success(message, result));
+//    }
 
     // 生成模拟响应
     @RequestMapping("/generate-responses")

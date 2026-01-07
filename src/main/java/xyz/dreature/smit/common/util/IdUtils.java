@@ -22,6 +22,7 @@ public class IdUtils {
                 .collect(Collectors.toList());
     }
 
+
     public static <T> List<T> parseIds(String idStr, Function<String, T> parser) {
         return parseIds(idStr, ",", parser);
     }
@@ -53,4 +54,6 @@ public class IdUtils {
     public static String joinIds(Collection<?> ids) {
         return joinIds(ids, ",");
     }
+
+
 }

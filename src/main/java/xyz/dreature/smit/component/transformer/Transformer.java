@@ -1,6 +1,6 @@
 package xyz.dreature.smit.component.transformer;
 
-import xyz.dreature.smit.common.model.context.EtlContext;
+import xyz.dreature.smit.common.model.context.Context;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -24,10 +24,10 @@ public interface Transformer<S, T> {
     }
 
     // 单项转换
-    List<T> transform(EtlContext context, S sourceData);
+    List<T> transform(Context context, S sourceData);
 
     // 流式转换
-    default List<T> transformStream(EtlContext context, List<S> sourceData) {
+    default List<T> transformStream(Context context, List<S> sourceData) {
         if (sourceData == null || sourceData.isEmpty()) {
             return Collections.emptyList();
         }

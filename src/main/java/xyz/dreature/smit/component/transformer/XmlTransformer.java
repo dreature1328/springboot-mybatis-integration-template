@@ -2,9 +2,9 @@ package xyz.dreature.smit.component.transformer;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import xyz.dreature.smit.common.model.context.EtlContext;
+import xyz.dreature.smit.common.model.context.Context;
+import xyz.dreature.smit.common.util.XmlUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 // XML 转换器
@@ -27,15 +26,15 @@ public abstract class XmlTransformer<T> implements Transformer<Document, T> {
     // 转换器键
     @Override
     public String getKey() {
-        return Document.class.getName() + "->" +
+        return Document.class.getSimpleName() + "->" +
                 ((Class) ((ParameterizedType) getClass()
                         .getGenericSuperclass())
-                        .getActualTypeArguments()[0]).getName();
+                        .getActualTypeArguments()[0]).getSimpleName();
     }
 
     // 单项转换
     @Override
-    public List<T> transform(EtlContext context, Document document) {
+    public List<T> transform(Context context, Document document) {
         if (document == null) {
             return Collections.emptyList();
         }
@@ -48,21 +47,17 @@ public abstract class XmlTransformer<T> implements Transformer<Document, T> {
         }
 
         Element dataElement = (Element) dataNodes.item(0);
-        NodeList itemNodes = dataElement.getElementsByTagName("item");
+        List<Element> itemElements = XmlUtils.getChildElements(dataElement, "item");
 
-        for (int i = 0; i < itemNodes.getLength(); i++) {
-            Node itemNode = itemNodes.item(i);
-            if (itemNode.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element) itemNode;
-                result.add(parseItem(itemElement));
-            }
+        for (Element itemElement : itemElements) {
+            result.add(parseItem(itemElement));
         }
         return result;
     }
 
     // 流式转换
     @Override
-    public List<T> transformStream(EtlContext context, List<Document> documents) {
+    public List<T> transformStream(Context context, List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
             return Collections.emptyList();
         }
@@ -75,11 +70,10 @@ public abstract class XmlTransformer<T> implements Transformer<Document, T> {
                         return Stream.empty();
                     }
                     Element dataElement = (Element) dataNodes.item(0);
-                    NodeList itemNodes = dataElement.getElementsByTagName("item");
-                    return IntStream.range(0, itemNodes.getLength())
-                            .mapToObj(itemNodes::item)
-                            .filter(node -> node.getNodeType() == Node.ELEMENT_NODE)
-                            .map(node -> (Element) node);
+
+                    // 只获取直接子元素
+                    List<Element> itemElements = XmlUtils.getChildElements(dataElement, "item");
+                    return itemElements.stream();
                 })
                 .map(this::parseItem)
                 .collect(Collectors.toList());

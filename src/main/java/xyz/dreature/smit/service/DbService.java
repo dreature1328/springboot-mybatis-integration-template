@@ -5,6 +5,9 @@ import java.util.List;
 
 // 数据库服务接口
 public interface DbService<T, ID extends Serializable> {
+    // 获取服务键（用于注册）
+    String getKey();
+
     // 查询总数
     int countAll();
 

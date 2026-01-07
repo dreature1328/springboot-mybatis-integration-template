@@ -10,17 +10,26 @@ import java.util.function.Function;
 
 // 文件服务
 public class FileServiceImpl<T> implements FileService<T> {
+    // 服务键（用于注册）
+    private final String key;
     // 文件解析器
     private final Function<String, ?> parser;
     // 线程池
     private final Executor executor;
 
     public FileServiceImpl(
+            String key,
             Function<String, T> parser,
             Executor executor
     ) {
+        this.key = key;
         this.parser = parser;
         this.executor = executor;
+    }
+
+    // 获取服务键（用于注册）
+    public String getKey() {
+        return this.key;
     }
 
     // ===== 文件抽取 =====

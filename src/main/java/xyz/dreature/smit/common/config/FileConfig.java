@@ -13,13 +13,15 @@ import xyz.dreature.smit.service.impl.FileServiceImpl;
 
 import java.util.concurrent.Executor;
 
+// 文件配置
 @Configuration
 public class FileConfig {
-    // 显式声明泛型 Bean，以解决泛型擦除导致的依赖注入失败的问题
+    // 指定解析方法、线程池
     @Bean
     @Lazy
-    public FileService<JsonNode> jsonFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<JsonNode> standardJsonFileService(@Qualifier("ioExecutor") Executor executor) {
         return new FileServiceImpl<>(
+                "file11",
                 JsonUtils::parseFile,
                 executor
         );
@@ -27,8 +29,30 @@ public class FileConfig {
 
     @Bean
     @Lazy
-    public FileService<Document> xmlFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<Document> standardXmlFileService(@Qualifier("ioExecutor") Executor executor) {
         return new FileServiceImpl<>(
+                "file12",
+                XmlUtils::parseFile,
+                executor
+        );
+    }
+
+    // 指定解析方法、线程池
+    @Bean
+    @Lazy
+    public FileService<JsonNode> advancedJsonFileService(@Qualifier("ioExecutor") Executor executor) {
+        return new FileServiceImpl<>(
+                "file21",
+                JsonUtils::parseFile,
+                executor
+        );
+    }
+
+    @Bean
+    @Lazy
+    public FileService<Document> advancedXmlFileService(@Qualifier("ioExecutor") Executor executor) {
+        return new FileServiceImpl<>(
+                "file22",
                 XmlUtils::parseFile,
                 executor
         );

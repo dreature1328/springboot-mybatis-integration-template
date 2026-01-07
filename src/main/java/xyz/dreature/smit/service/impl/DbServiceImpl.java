@@ -1,5 +1,6 @@
 package xyz.dreature.smit.service.impl;
 
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.dreature.smit.common.util.BatchUtils;
 import xyz.dreature.smit.mapper.BaseMapper;
@@ -12,57 +13,76 @@ import java.util.List;
 // 数据库服务
 @Transactional
 public class DbServiceImpl<T, ID extends Serializable> implements DbService<T, ID> {
+    // 服务键
+    private final String key;
     // ORM 映射器
     private final BaseMapper<T, ID> mapper;
 
-    public DbServiceImpl(BaseMapper<T, ID> mapper) {
+    public DbServiceImpl(
+            String key,
+            BaseMapper<T, ID> mapper
+    ) {
+        this.key = key;
         this.mapper = mapper;
+    }
+
+    // 获取服务键（用于注册）
+    public String getKey() {
+        return this.key;
     }
 
     // 查询总数
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public int countAll() {
         return mapper.countAll();
     }
 
     // 查询全表
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectAll() {
         return mapper.selectAll();
     }
 
     // 查询随机
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectRandom(int count) {
         return mapper.selectRandom(count);
     }
 
     // 查询页面
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectByPage(int offset, int limit) {
         return mapper.selectByPage(offset, limit);
     }
 
     // 单项查询
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public T selectById(ID id) {
         return mapper.selectById(id);
     }
 
     // 逐项查询
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectByIds(ID... ids) {
         return BatchUtils.mapEach(Arrays.asList(ids), mapper::selectById);
     }
 
     // 单批查询
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectBatchByIds(List<ID> ids) {
         return mapper.selectBatchByIds(ids);
     }
 
     // 分批查询
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectBatchByIds(List<ID> ids, int batchSize) {
         return BatchUtils.flatMapBatch(ids, batchSize, mapper::selectBatchByIds);
     }
@@ -165,6 +185,7 @@ public class DbServiceImpl<T, ID extends Serializable> implements DbService<T, I
 
     // 清空
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void truncate() {
         mapper.truncate();
     }

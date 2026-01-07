@@ -6,7 +6,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
-import xyz.dreature.smit.common.model.context.EtlContext;
+import xyz.dreature.smit.common.model.context.Context;
 import xyz.dreature.smit.common.model.job.Job;
 
 import java.util.Map;
@@ -16,7 +16,6 @@ import java.util.concurrent.ScheduledFuture;
 // 任务调度器
 @Component
 public class JobScheduler {
-
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
     @Autowired
     private ApplicationContext applicationContext;
@@ -39,7 +38,7 @@ public class JobScheduler {
                     job.getOrchestratorName(),
                     Orchestrator.class
             );
-            EtlContext context = new EtlContext();
+            Context context = new Context();
             context.setJobId(job.getJobId());
             orchestrator.runBatch(context, job.getParams());
         };

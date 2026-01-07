@@ -6,22 +6,22 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import xyz.dreature.smit.common.model.entity.Data;
+import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.util.MqUtils;
 import xyz.dreature.smit.service.MqService;
 import xyz.dreature.smit.service.impl.MqServiceImpl;
 
-// 消息队列服务配置
+// 消息队列配置
 @Configuration
 public class MqConfig {
-    // 显式声明泛型 Bean，以解决泛型擦除导致的依赖注入失败的问题
+    // 指定模板、默认消息属性、实体类
     @Bean
     @Lazy
-    public MqService<Data, Data> mqService(RabbitTemplate rabbitTemplate) {
+    public MqService<StandardEntity, StandardEntity> mqService(RabbitTemplate rabbitTemplate) {
         return new MqServiceImpl<>(
                 rabbitTemplate,
                 MqUtils.createDefaultMessageProperties(),
-                Data.class
+                StandardEntity.class
         );
     }
 

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface ExtractStrategy<S> {
-    // 获取策略名
-    String getStrategyName();
+    // 获取策略键（用于注册）
+    String getKey();
 
     // 单项抽取
     List<S> extract(Map<String, ?> params);

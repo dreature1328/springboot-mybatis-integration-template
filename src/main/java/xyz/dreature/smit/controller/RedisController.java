@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import xyz.dreature.smit.common.model.entity.Data;
+import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.vo.Result;
 
 import javax.validation.Valid;
@@ -88,7 +88,7 @@ public class RedisController {
             @RequestBody
             @NotNull(message = "值不能为空")
             @Valid
-            Data value,
+            StandardEntity value,
 
             @RequestParam(required = false)
             @Min(value = 0, message = "过期时间不能为负")

@@ -1,7 +1,7 @@
 package xyz.dreature.smit.component.transformer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import xyz.dreature.smit.common.model.context.EtlContext;
+import xyz.dreature.smit.common.model.context.Context;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -21,18 +21,18 @@ public abstract class JsonTransformer<T> implements Transformer<JsonNode, T> {
         this.itemParser = itemParser;
     }
 
-    // 转换器键
+    // 转换器键（用于注册）
     @Override
     public String getKey() {
-        return JsonNode.class.getName() + "->" +
+        return JsonNode.class.getSimpleName() + "->" +
                 ((Class) ((ParameterizedType) getClass()
                         .getGenericSuperclass())
-                        .getActualTypeArguments()[0]).getName();
+                        .getActualTypeArguments()[0]).getSimpleName();
     }
 
     // 单项转换
     @Override
-    public List<T> transform(EtlContext context, JsonNode jsonNode) {
+    public List<T> transform(Context context, JsonNode jsonNode) {
         if (jsonNode == null) {
             return Collections.emptyList();
         }
@@ -51,7 +51,7 @@ public abstract class JsonTransformer<T> implements Transformer<JsonNode, T> {
 
     // 流式转换
     @Override
-    public List<T> transformStream(EtlContext context, List<JsonNode> jsonNodes) {
+    public List<T> transformStream(Context context, List<JsonNode> jsonNodes) {
         if (jsonNodes == null || jsonNodes.isEmpty()) {
             return Collections.emptyList();
         }

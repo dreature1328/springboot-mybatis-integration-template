@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import xyz.dreature.smit.common.model.entity.Data;
+import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.service.MockService;
 
 import java.security.SecureRandom;
@@ -19,8 +19,8 @@ public class MockServiceImpl implements MockService {
 
     // 生成模拟数据（单条）
     @Override
-    public Data generateMockData() {
-        return new Data(
+    public StandardEntity generateMockData() {
+        return new StandardEntity(
                 // 取 UUID 的高 64 位并转换为非负长整型值
                 Math.abs(UUID.randomUUID().getMostSignificantBits()),
                 // 取 0-10000 之间的随机整数
@@ -36,12 +36,12 @@ public class MockServiceImpl implements MockService {
 
     // 生成模拟数据（多条）
     @Override
-    public List<Data> generateMockData(int count) {
-        List<Data> dataList = new ArrayList<>(count);
+    public List<StandardEntity> generateMockData(int count) {
+        List<StandardEntity> standardEntityList = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            dataList.add(generateMockData());
+            standardEntityList.add(generateMockData());
         }
-        return dataList;
+        return standardEntityList;
     }
 
     // 生成随机字符串
@@ -58,16 +58,16 @@ public class MockServiceImpl implements MockService {
 
     // 生成模拟请求参数（单组）
     @Override
-    public Map<String, ?> generateMockParams() {
-        Map<String, Integer> params = new HashMap<>();
+    public Map<String, Object> generateMockParams() {
+        Map<String, Object> params = new HashMap<>();
         params.put("dataSize", random.nextInt(100));
         return params;
     }
 
     // 生成模拟请求参数（多组）
     @Override
-    public List<Map<String, ?>> generateMockParams(int count) {
-        List<Map<String, ?>> params = new ArrayList<>();
+    public List<Map<String, Object>> generateMockParams(int count) {
+        List<Map<String, Object>> params = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             params.add(generateMockParams());
         }

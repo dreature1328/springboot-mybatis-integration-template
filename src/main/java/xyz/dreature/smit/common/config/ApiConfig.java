@@ -13,10 +13,10 @@ import xyz.dreature.smit.service.impl.ApiServiceImpl;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-// API 服务配置
+// API 配置
 @Configuration
 public class ApiConfig {
-    // 显式声明泛型 Bean，以解决泛型擦除导致的依赖注入失败的问题
+    // 指定基础 URL、方法、鉴权键值、线程池
     @Bean
     @Lazy
     public ApiService<JsonNode> apiService(

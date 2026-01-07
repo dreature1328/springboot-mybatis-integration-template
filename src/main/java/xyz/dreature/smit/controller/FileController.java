@@ -1,6 +1,5 @@
 package xyz.dreature.smit.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,11 +7,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.w3c.dom.Document;
-import xyz.dreature.smit.common.model.entity.Data;
 import xyz.dreature.smit.common.model.vo.Result;
 import xyz.dreature.smit.component.transformer.Transformer;
+import xyz.dreature.smit.component.transformer.registry.TransformerRegistry;
 import xyz.dreature.smit.service.FileService;
+import xyz.dreature.smit.service.registry.FileServiceRegistry;
 
 import javax.validation.constraints.NotBlank;
 import java.util.List;
@@ -24,45 +23,35 @@ import java.util.List;
 @Validated
 public class FileController {
     @Autowired
-    private FileService<JsonNode> jsonFileService;
+    private FileServiceRegistry fileServiceRegistry;
 
     @Autowired
-    private FileService<Document> xmlFileService;
-
-    @Autowired
-    private Transformer<JsonNode, Data> jsonTransformer;
-
-    @Autowired
-    private Transformer<Document, Data> xmlTransformer;
+    private TransformerRegistry transformerRegistry;
 
     // ===== 文件抽取 =====
-    // 解析 JSON 文件
-    @RequestMapping("/parse-json")
-    public ResponseEntity<Result<List<Data>>> parseDataFromJsonFile(
-            @RequestParam(name = "file-path", defaultValue = "scripts/mock_data.json")
+    // 解析文件
+    @RequestMapping("/parse")
+    public <S, T> ResponseEntity<Result<List<T>>> parseFromFile(
+            @RequestParam(name = "file-path", defaultValue = "scripts/seeding/standard_data.json")
             @NotBlank(message = "文件路径不能为空")
-            String filePath
-    ) {
-        JsonNode jsonNode = jsonFileService.read(filePath);
-        List<Data> result = jsonTransformer.transform(null, jsonNode);
-        int resultCount = result.size();
-        String message = String.format("解析 %d 条 JSON 数据", resultCount);
-        log.info("JSON 文件解析完成，条数：{}", resultCount);
-        return ResponseEntity.ok().body(Result.success(message, result));
-    }
+            String filePath,
 
-    // 解析 XML 文件
-    @RequestMapping("/parse-xml")
-    public ResponseEntity<Result<List<Data>>> parseDataFromXmlFile(
-            @RequestParam(name = "file-path", defaultValue = "scripts/mock_data.xml")
-            @NotBlank(message = "文件路径不能为空")
-            String filePath
+            @RequestParam(name = "service-key", defaultValue = "file11")
+            @NotBlank(message = "服务键不能为空")
+            String serviceKey,
+
+            @RequestParam(name = "transformer-key", defaultValue = "JsonNode->StandardEntity")
+            @NotBlank(message = "转换器键不能为空")
+            String transformerKey
+            // 替换例子： "scripts/seeding/advanced_data.json", "file21", "JsonNode->AdvancedEntity"
     ) {
-        Document document = xmlFileService.read(filePath);
-        List<Data> result = xmlTransformer.transform(null, document);
+        FileService<S> fileService = fileServiceRegistry.getService(serviceKey);
+        Transformer<S, T> transformer = transformerRegistry.get(transformerKey);
+
+        List<T> result = transformer.transform(null, fileService.read(filePath));
         int resultCount = result.size();
-        String message = String.format("解析 %d 条 XML 数据", resultCount);
-        log.info("XML 文件解析完成，条数：{}", resultCount);
+        String message = String.format("解析 %d 条数据", resultCount);
+        log.info("文件解析完成，条数：{}", resultCount);
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 }

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// 日志记录相关配置
+// 日志记录配置
 @Configuration
 public class LoggerConfig {
     @Bean

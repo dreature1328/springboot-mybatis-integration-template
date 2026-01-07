@@ -11,7 +11,7 @@ public class Job {
     private String jobName;        // 任务名称
     private String cronExpression; // cron 表达式
     private String orchestratorName; // 编排器 Bean 名
-    private List<Map<String, ?>> params; // 任务参数
+    private List<Map<String, Object>> params; // 任务参数
 
     // ===== 构造方法 =====
     // 无参构造器
@@ -20,7 +20,7 @@ public class Job {
     }
 
     // 全参构造器
-    public Job(String jobId, String jobName, String cronExpression, String orchestratorName, List<Map<String, ?>> params) {
+    public Job(String jobId, String jobName, String cronExpression, String orchestratorName, List<Map<String, Object>> params) {
         this.jobId = jobId;
         this.jobName = jobName;
         this.cronExpression = cronExpression;
@@ -70,11 +70,11 @@ public class Job {
         this.orchestratorName = orchestratorName;
     }
 
-    public List<Map<String, ?>> getParams() {
+    public List<? extends Map<String, Object>> getParams() {
         return params;
     }
 
-    public void setParams(List<Map<String, ?>> params) {
+    public void setParams(List<Map<String, Object>> params) {
         this.params = params;
     }
 
