@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.ResourceLoader;
 import org.w3c.dom.Document;
 import xyz.dreature.smit.common.util.JsonUtils;
 import xyz.dreature.smit.common.util.XmlUtils;
@@ -19,9 +20,13 @@ public class FileConfig {
     // 指定解析方法、线程池
     @Bean
     @Lazy
-    public FileService<JsonNode> standardJsonFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<JsonNode> standardJsonFileService(
+            ResourceLoader resourceLoader,
+            @Qualifier("ioExecutor") Executor executor
+    ) {
         return new FileServiceImpl<>(
                 "file11",
+                resourceLoader,
                 JsonUtils::parseFile,
                 executor
         );
@@ -29,9 +34,13 @@ public class FileConfig {
 
     @Bean
     @Lazy
-    public FileService<Document> standardXmlFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<Document> standardXmlFileService(
+            ResourceLoader resourceLoader,
+            @Qualifier("ioExecutor") Executor executor
+    ) {
         return new FileServiceImpl<>(
                 "file12",
+                resourceLoader,
                 XmlUtils::parseFile,
                 executor
         );
@@ -40,9 +49,13 @@ public class FileConfig {
     // 指定解析方法、线程池
     @Bean
     @Lazy
-    public FileService<JsonNode> advancedJsonFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<JsonNode> advancedJsonFileService(
+            ResourceLoader resourceLoader,
+            @Qualifier("ioExecutor") Executor executor
+    ) {
         return new FileServiceImpl<>(
                 "file21",
+                resourceLoader,
                 JsonUtils::parseFile,
                 executor
         );
@@ -50,9 +63,13 @@ public class FileConfig {
 
     @Bean
     @Lazy
-    public FileService<Document> advancedXmlFileService(@Qualifier("ioExecutor") Executor executor) {
+    public FileService<Document> advancedXmlFileService(
+            ResourceLoader resourceLoader,
+            @Qualifier("ioExecutor") Executor executor
+    ) {
         return new FileServiceImpl<>(
                 "file22",
+                resourceLoader,
                 XmlUtils::parseFile,
                 executor
         );

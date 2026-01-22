@@ -1,5 +1,6 @@
 package xyz.dreature.smit.common.util;
 
+import org.springframework.core.io.Resource;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -46,9 +47,8 @@ public class XmlUtils {
 
     // ===== 文档获取 =====
     // 解析 XML 文件
-    public static Document parseFile(String filename) {
-        File file = new File(filename);
-        return parseFile(file);
+    public static Document parseFile(String filePath) {
+        return parseFile(new File(filePath));
     }
 
     // 解析 XML 文件
@@ -58,8 +58,20 @@ public class XmlUtils {
             document.normalize();
             return document;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("文件不存在: " + file.getPath(), e);
+        } catch (IOException | SAXException e) {
+            throw new RuntimeException("XML解析失败: " + file.getPath(), e);
+        }
+    }
+
+    // 解析 XML 文件
+    public static Document parseFile(Resource resource) {
+        try (InputStream is = resource.getInputStream()) {
+            Document document = documentBuilder.parse(is);
+            document.normalize();
+            return document;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("文件不存在", e);
         } catch (IOException | SAXException e) {
             throw new RuntimeException("XML 解析失败", e);
         }

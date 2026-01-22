@@ -6,13 +6,11 @@ import javax.validation.constraints.*;
 public class StandardEntity {
     // ===== 字段 =====
     @NotNull(message = "ID 不能为空")
-    @Min(value = 1, message = "ID 必须为正")
-    @Max(value = Long.MAX_VALUE, message = "ID 范围受限")
+    @Positive(message = "ID 必须为正")
     private Long id;              // 唯一标识符
 
     @NotNull(message = "整型字段不能为空")
     @Min(value = 0, message = "整型字段不能为负")
-    @Max(value = Integer.MAX_VALUE, message = "整型字段范围受限")
     private Integer numericValue; // 整型数值
 
     @NotNull(message = "浮点字段不能为空")

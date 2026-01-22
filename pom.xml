@@ -12,7 +12,7 @@
 
     <groupId>xyz.dreature.smit</groupId>
     <artifactId>springboot-mybatis-integration-template</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1</version>
     <name>springboot-mybatis-integration-template</name>
 
     <properties>
@@ -27,7 +27,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
-        <!-- Spring Boot Web 启动依赖-->
+        <!-- Spring Boot Web 依赖-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.5.4</version>
+            <version>42.7.8</version>
         </dependency>
         <!-- Spring Boot Redis 依赖-->
         <dependency>
@@ -77,12 +77,12 @@
             <artifactId>lombok</artifactId>
             <version>1.18.38</version>
         </dependency>
-        <!--        &lt;!&ndash; Hutool 工具包 &ndash;&gt;-->
-        <!--        <dependency>-->
-        <!--            <groupId>cn.hutool</groupId>-->
-        <!--            <artifactId>hutool-all</artifactId>-->
-        <!--            <version>5.8.38</version>-->
-        <!--        </dependency>-->
+        <!--  Hutool 核心工具包依赖 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-core</artifactId>
+            <version>5.8.43</version>
+        </dependency>
         <!-- Spring Boot 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

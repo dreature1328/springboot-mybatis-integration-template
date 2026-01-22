@@ -88,7 +88,6 @@ public class EtlConfig {
             MqExtractor extractor,
             IdentityTransformer transformer,
             DbLoader loader) {
-
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
 }

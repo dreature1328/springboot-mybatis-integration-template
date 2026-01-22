@@ -32,8 +32,14 @@
         FROM <include refid="table"/>
     </select>
 
-    <!-- 查询全表 -->
+    <!-- 查询全部 -->
     <select id="selectAll" resultMap="standardMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全部（游标） -->
+    <select id="selectAllWithCursor" resultMap="standardMap">
         SELECT <include refid="columns"/>
         FROM <include refid="table"/>
     </select>
@@ -43,7 +49,7 @@
         SELECT <include refid="columns"/>
         FROM <include refid="table"/>
         ORDER BY RAND()
-        LIMIT #{count}
+        LIMIT #{limit}
     </select>
 
     <!-- 页面查询 -->
@@ -52,6 +58,18 @@
         FROM <include refid="table"/>
         ORDER BY `id`
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 条件查询 -->
+    <select id="selectByCondition" parameterType="map" resultMap="standardMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        <where>
+            <foreach collection="_parameter" index="key" item="value">
+                <!-- 此处存在 SQL 注入风险，需预先白名单校验 -->
+                AND ${key} = #{value}
+            </foreach>
+        </where>
     </select>
 
     <!-- 单项查询 -->

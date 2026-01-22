@@ -10,7 +10,6 @@ public class AdvancedEntity {
     // ===== 字段 =====
     @NotNull(message = "ID 不能为空")
     @Min(value = 1, message = "ID 必须为正")
-    @Max(value = Long.MAX_VALUE, message = "ID 范围受限")
     private Long id;              // 唯一标识符
 
     @NotBlank(message = "业务编码不能为空")

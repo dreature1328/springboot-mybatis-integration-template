@@ -1,14 +1,20 @@
 package xyz.dreature.smit.service.impl;
 
+import org.apache.ibatis.cursor.Cursor;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.common.DataProcessingException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.dreature.smit.common.util.BatchUtils;
-import xyz.dreature.smit.mapper.BaseMapper;
+import xyz.dreature.smit.mapper.base.BaseMapper;
 import xyz.dreature.smit.service.DbService;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 // 数据库服务
 @Transactional
@@ -38,18 +44,45 @@ public class DbServiceImpl<T, ID extends Serializable> implements DbService<T, I
         return mapper.countAll();
     }
 
-    // 查询全表
+    // 查询全部
     @Override
     @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectAll() {
         return mapper.selectAll();
     }
 
+    // 查询全部（游标）
+    @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    public Cursor<T> selectAllWithCursor() {
+        return mapper.selectAllWithCursor();
+    }
+
+    // 处理全部（游标）
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    public void processAllWithCursor(Consumer<T> processor) {
+        try (Cursor<T> cursor = mapper.selectAllWithCursor()) {
+            BatchUtils.processEach(cursor, processor);
+        } catch (IOException e) {
+            throw new DataProcessingException("游标处理失败", e);
+        }
+    }
+
+    // 转换全部（游标）
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    public <R> List<R> transformAllWithCursor(Function<T, List<R>> transformer) {
+        try (Cursor<T> cursor = mapper.selectAllWithCursor()) {
+            return BatchUtils.flatMapEach(cursor, transformer);
+        } catch (IOException e) {
+            throw new DataProcessingException("游标处理失败", e);
+        }
+    }
+
     // 查询随机
     @Override
     @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    public List<T> selectRandom(int count) {
-        return mapper.selectRandom(count);
+    public List<T> selectRandom(int limit) {
+        return mapper.selectRandom(limit);
     }
 
     // 查询页面
@@ -57,6 +90,13 @@ public class DbServiceImpl<T, ID extends Serializable> implements DbService<T, I
     @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<T> selectByPage(int offset, int limit) {
         return mapper.selectByPage(offset, limit);
+    }
+
+    // 条件查询
+    @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    public List<T> selectByCondition(Map<String, Object> condition) {
+        return mapper.selectByCondition(condition);
     }
 
     // 单项查询

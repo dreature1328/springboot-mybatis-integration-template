@@ -1,6 +1,6 @@
 # 基于 Spring Boot + MyBatis 的轻量级数据集成模板
 
-本项目是针对数据集成场景的模板工程，基于 Spring Boot + MyBatis，提供**轻量级**可扩展的 ETL 解决方案，支持多数据源（本地文件 / API / 数据库 / 消息队列等），可处理离线单任务**千万级**数据量，**不涉及**分布式框架（Hadoop / Spark / Flink 等），便于初学者快速上手。
+本项目是针对数据集成场景的模板工程，基于 Spring Boot + MyBatis，提供**轻量级**可扩展的 ETL 解决方案，支持多数据源（文件 / API / 数据库 / 消息队列等），可处理离线单任务**千万级**数据量，**不涉及**分布式框架（Hadoop / Spark / Flink 等），便于初学者快速上手。
 
 ## 关联项目
 
@@ -28,7 +28,7 @@
 | **编排调度层** | `orchestration` | 组装 ETL 组件、管理流程上下文、监控指标、任务调度 | 模板方法模式、门面模式  |
 | **ETL 组件层** | `component`     | 实现抽取、转换、加载的核心逻辑                    | 策略模式、注册模式      |
 | **策略算法层** | `strategy`      | 封装不同数据源及场景的具体算法                    | 策略模式、注册模式      |
-| **数据服务层** | `service`       | 提供多数据源操作的代理接口                        | 代理模式、注册模式      |
+| **数据服务层** | `service`       | 提供多数据源操作的代理接口                        | 委托模式、注册模式      |
 | **数据访问层** | `mapper`        | 基于 ORM 框架映射，直接与数据库交互               | 数据访问对象（DAO）模式 |
 
 ### 辅助支撑层级
@@ -48,7 +48,7 @@ ETL 流程的固定骨架（抽取 → 转换 → 加载）被定义为模板，
 
 - 上下文（Context）：集中管理批量控制、策略选择、数据源路由等运行时参数
 - 抽取器（Extractor）：根据策略键（如 `"db:ids"` ）选择抽取策略，返回结构化中间数据（如 `JsonNode`、`Document` 等）
-- 转换器（Transformer）：根据继承链渐进细化转换规则，将结构化数据转换为实体对象（如 `StandardEntity.java`）
+- 转换器（Transformer）：根据继承链渐进细化转换规则，将结构化数据转换为实体对象（如 `StandardEntity`）
 - 加载器（Loader）：根据条件分发（如 `"db:upsert"`）调用加载方法，将实体对象持久化至数据表记录
 
 ### 执行方式概览
@@ -82,7 +82,7 @@ ETL 组件实现“单项”和“单批”（若有）原子化操作，而“�
 
 ### 字段映射示例
 
-标准实体（`StandardEntity.java`） 映射 MySQL 数据表
+标准实体 `StandardEntity`  映射 MySQL 数据表
 
 
 | 实体字段     | 表字段        | 类型映射              |
@@ -93,7 +93,7 @@ ETL 组件实现“单项”和“单批”（若有）原子化操作，而“�
 | textContent  | text_content  | String ↔ VARCHAR(255) |
 | activeFlag   | active_flag   | Boolean ↔ TINYINT(1)  |
 
-增强实体（`AdvancedEntity.java`） 映射  PostgreSQL 数据表
+增强实体 `AdvancedEntity` 映射  PostgreSQL 数据表
 
 | 实体字段   | 表字段     | 类型映射                  |
 | :--------- | :--------- | :------------------------ |
@@ -110,7 +110,7 @@ ETL 组件实现“单项”和“单批”（若有）原子化操作，而“�
 
 1. **数据源配置**
    - 编辑 `application.properties` 文件，配置数据源参数
-   - 执行 `standard_table.sql`  或 `advanced_table.sql` 脚本，初始化数据库表结构
+   - 执行 `standard_table.sql`  与 `advanced_table.sql` 脚本，初始化数据库表结构
 2. **注入配置**：按需调整 `common.config` 中的配置
 3. **项目启动**：运行 `Application.java` 主类，启动 Spring Boot 应用
 4. **接口测试**：发起请求调用控制层接口，直接调用数据服务（`<data source>Controller.java`）或运行 ETL 流程（`EtlController.java`），或者注册任务并定时调度（`JobController.java`）

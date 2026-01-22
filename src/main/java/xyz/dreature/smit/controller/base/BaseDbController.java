@@ -1,5 +1,9 @@
-package xyz.dreature.smit.controller;
+package xyz.dreature.smit.controller.base;
 
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.text.StrSplitter;
+import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.TypeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -7,14 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import xyz.dreature.smit.common.model.vo.Result;
-import xyz.dreature.smit.common.util.IdUtils;
 import xyz.dreature.smit.service.DbService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.List;
+import java.util.Map;
 
 // 测试接口（数据库操作）
 @Slf4j
@@ -24,38 +27,10 @@ public abstract class BaseDbController<T, ID extends Serializable> {
     protected final Class<T> entityClass;
     protected final Class<ID> idClass;
 
-    protected BaseDbController(DbService<T, ID> dbService,
-                               Class<T> entityClass,
-                               Class<ID> idClass) {
+    protected BaseDbController(DbService<T, ID> dbService) {
         this.dbService = dbService;
-        this.entityClass = entityClass;
-        this.idClass = idClass;
-    }
-
-    // 实体列表转数组
-    public T[] toEntityArray(List<T> list) {
-        T[] array = (T[]) Array.newInstance(entityClass, list.size());
-        return list.toArray(array);
-    }
-
-    // ID 列表转数组
-    public ID[] toIdArray(List<ID> list) {
-        ID[] array = (ID[]) Array.newInstance(idClass, list.size());
-        return list.toArray(array);
-    }
-
-    // 解析 ID 字符串
-    public List<ID> parseIds(String idStr) {
-        switch (idClass.getSimpleName()) {
-            case "Long":
-                return (List<ID>) IdUtils.parseLongIds(idStr);
-            case "Integer":
-                return (List<ID>) IdUtils.parseIntIds(idStr);
-            case "String":
-                return (List<ID>) IdUtils.parseStringIds(idStr);
-            default:
-                throw new IllegalArgumentException();
-        }
+        this.entityClass = (Class<T>) TypeUtil.getTypeArgument(this.getClass(), 0);
+        this.idClass = (Class<ID>) TypeUtil.getTypeArgument(this.getClass(), 1);
     }
 
     // 查询总数
@@ -67,7 +42,7 @@ public abstract class BaseDbController<T, ID extends Serializable> {
         return ResponseEntity.ok().body(Result.success(message, count));
     }
 
-    // 查询全表
+    // 查询全部
     @RequestMapping("/select-all")
     public ResponseEntity<Result<List<T>>> selectAll() {
         List<T> result = dbService.selectAll();
@@ -80,11 +55,11 @@ public abstract class BaseDbController<T, ID extends Serializable> {
     // 查询随机
     @RequestMapping("/select-random")
     public ResponseEntity<Result<List<T>>> selectRandom(
-            @RequestParam(name = "count", defaultValue = "1")
+            @RequestParam(name = "limit", defaultValue = "10")
             @Positive(message = "条数必须为正")
-            int count
+            int limit
     ) {
-        List<T> result = dbService.selectRandom(count);
+        List<T> result = dbService.selectRandom(limit);
         int resultCount = result.size();
         String message = String.format("随机查询 %d 条数据", resultCount);
         log.info("随机查询完成，条数：{}", resultCount);
@@ -109,6 +84,20 @@ public abstract class BaseDbController<T, ID extends Serializable> {
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
+    // 条件查询
+    @RequestMapping("/select-by-condition")
+    public ResponseEntity<Result<List<T>>> selectByCondition(
+            @RequestBody
+            @NotEmpty(message = "查询条件不能为空")
+            Map<String, Object> condition
+    ) {
+        List<T> result = dbService.selectByCondition(condition);
+        int resultCount = result.size();
+        String message = String.format("条件查询 %d 条数据", resultCount);
+        log.info("条件查询完成，条数：{}", resultCount);
+        return ResponseEntity.ok().body(Result.success(message, result));
+    }
+
     // 逐项查询
     @RequestMapping("/select-by-ids")
     public ResponseEntity<Result<List<T>>> selectByIds(
@@ -117,7 +106,10 @@ public abstract class BaseDbController<T, ID extends Serializable> {
             @Pattern(regexp = "^\\d+(,\\d+)*$", message = "ID 需由逗号分隔")
             String ids
     ) {
-        List<T> result = dbService.selectByIds(toIdArray(parseIds(ids)));
+        List<ID> idList = Convert.toList(idClass, StrSplitter.split(ids, ',', 0, true, false));
+        ID[] idArray = ArrayUtil.toArray(idList, idClass);
+
+        List<T> result = dbService.selectByIds(idArray);
         int resultCount = result.size();
         String message = String.format("逐项查询 %d 条数据", resultCount);
         log.info("逐项查询完成，条数:{}", resultCount);
@@ -136,7 +128,9 @@ public abstract class BaseDbController<T, ID extends Serializable> {
             @Positive(message = "批大小必须为正")
             int batchSize
     ) {
-        List<T> result = dbService.selectBatchByIds(parseIds(ids), batchSize);
+        List<ID> idList = Convert.toList(idClass, StrSplitter.split(ids, ',', 0, true, false));
+
+        List<T> result = dbService.selectBatchByIds(idList, batchSize);
         int resultCount = result.size();
         String message = String.format("分批查询 %d 条数据", resultCount);
         log.info("分批查询完成，条数：{}", resultCount);
@@ -215,7 +209,9 @@ public abstract class BaseDbController<T, ID extends Serializable> {
             @Valid
             List<T> entities
     ) {
-        int affectedRows = dbService.upsert(toEntityArray(entities));
+        T[] entityArray = ArrayUtil.toArray(entities, entityClass);
+
+        int affectedRows = dbService.upsert(entityArray);
         String message = String.format("逐项插入或更新 %d 条数据", affectedRows);
         log.info("逐项插入或更新完成，影响行数：{}", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));
@@ -247,7 +243,10 @@ public abstract class BaseDbController<T, ID extends Serializable> {
             @Pattern(regexp = "^\\d+(,\\d+)*$", message = "ID 需由逗号分隔")
             String ids
     ) {
-        int affectedRows = dbService.deleteByIds(toIdArray(parseIds(ids)));
+        List<ID> idList = Convert.toList(idClass, StrSplitter.split(ids, ',', 0, true, false));
+        ID[] idArray = ArrayUtil.toArray(idList, idClass);
+
+        int affectedRows = dbService.deleteByIds(idArray);
         String message = String.format("逐项删除 %d 条数据", affectedRows);
         log.info("逐项删除完成，影响行数：{}", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));
@@ -265,7 +264,9 @@ public abstract class BaseDbController<T, ID extends Serializable> {
             @Positive(message = "批大小必须为正")
             int batchSize
     ) {
-        int affectedRows = dbService.deleteBatchByIds(parseIds(ids), batchSize);
+        List<ID> idList = Convert.toList(idClass, StrSplitter.split(ids, ',', 0, true, false));
+
+        int affectedRows = dbService.deleteBatchByIds(idList, batchSize);
         String message = String.format("分批删除 %d 条数据", affectedRows);
         log.info("分批删除完成，影响行数：{}", affectedRows);
         return ResponseEntity.ok().body(Result.success(message, null));

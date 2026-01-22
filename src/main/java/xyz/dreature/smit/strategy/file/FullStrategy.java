@@ -1,7 +1,9 @@
 package xyz.dreature.smit.strategy.file;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import xyz.dreature.smit.service.FileService;
 import xyz.dreature.smit.service.registry.FileServiceRegistry;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 // 文件-完整抽取策略
+@Slf4j
 @Component
 @Lazy
 public class FullStrategy<S> implements ExtractStrategy<S> {
@@ -27,11 +30,10 @@ public class FullStrategy<S> implements ExtractStrategy<S> {
     public List<S> extract(Map<String, ?> fileParams) {
         String dataSource = (String) fileParams.get("dataSource");
         FileService<S> service = registry.getService(dataSource);
+        String location = (String) fileParams.get("location");
 
-
-        List<S> result = new ArrayList<>();
-        String filePath = (String) fileParams.get("filePath");
-        result.add(service.read(filePath));
+        List<Resource> resources = service.collect(location);
+        List<S> result = service.readBatch(resources);
         return result;
     }
 
@@ -41,18 +43,11 @@ public class FullStrategy<S> implements ExtractStrategy<S> {
         String dataSource = (String) filesParams.get(0).get("dataSource");
         FileService<S> service = registry.getService(dataSource);
 
-        List<String> filePaths = new ArrayList<>();
+        List<Resource> resources = new ArrayList<>();
         for (Map<String, ?> fileParams : filesParams) {
-            String filePath = (String) fileParams.get("filePath");
-            filePaths.add(filePath);
+            String location = (String) fileParams.get("location");
+            resources.addAll(service.collect(location));
         }
-        return service.readBatch(filePaths);
+        return service.readBatch(resources);
     }
-
-//    @Override
-//    public List<S> extractBatch(List<? extends Map<String, ?>> filesParams) {
-//        return filesParams.parallelStream()
-//                .flatMap(fileParams -> extract(fileParams).stream())
-//                .collect(Collectors.toList());
-//    }
 }

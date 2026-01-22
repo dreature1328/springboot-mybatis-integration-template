@@ -1,7 +1,12 @@
 package xyz.dreature.smit.service;
 
+import org.apache.ibatis.cursor.Cursor;
+
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 // 数据库服务接口
 public interface DbService<T, ID extends Serializable> {
@@ -11,14 +16,26 @@ public interface DbService<T, ID extends Serializable> {
     // 查询总数
     int countAll();
 
-    // 查询全表
+    // 查询全部
     List<T> selectAll();
 
+    // 查询全部（游标）
+    Cursor<T> selectAllWithCursor();
+
+    // 处理全部（游标）
+    void processAllWithCursor(Consumer<T> processor);
+
+    // 转换全部（游标）
+    <R> List<R> transformAllWithCursor(Function<T, List<R>> transformer);
+
     // 查询随机
-    List<T> selectRandom(int count);
+    List<T> selectRandom(int limit);
 
     // 查询页面
     List<T> selectByPage(int offset, int limit);
+
+    // 条件查询
+    List<T> selectByCondition(Map<String, Object> condition);
 
     // 单项查询
     T selectById(ID id);

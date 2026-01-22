@@ -20,7 +20,7 @@ CREATE TABLE advanced_table (
     CONSTRAINT chk_status_range CHECK (status >= 0 AND status <= 10)
 );
 
-COMMENT ON COLUMN advanced_table.id IS '主键 ID';
+COMMENT ON COLUMN advanced_table.id IS 'ID';
 COMMENT ON COLUMN advanced_table.code IS '业务编码';
 COMMENT ON COLUMN advanced_table.name IS '名称';
 COMMENT ON COLUMN advanced_table.status IS '状态';
