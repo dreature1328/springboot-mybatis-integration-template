@@ -1,13 +1,12 @@
 package xyz.dreature.smit.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.vo.Result;
 import xyz.dreature.smit.service.MqService;
@@ -16,18 +15,18 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
 import java.util.List;
 
-// 测试接口（消息队列操作）
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/mq")
-@Validated
+@Tag(name = "消息队列操作")
 public class MqController {
     @Autowired
     private MqService<StandardEntity, StandardEntity> mqService;
 
     // ===== 消息队列抽取 =====
-    // 查询总数
-    @RequestMapping("/count-all")
+    @Operation(summary = "查询总数")
+    @GetMapping("/count-all")
     public ResponseEntity<Result<Integer>> countAll(
     ) {
         int count = mqService.countAll();
@@ -36,8 +35,8 @@ public class MqController {
         return ResponseEntity.ok().body(Result.success(message, count));
     }
 
-    // 依次接收（定数）
-    @RequestMapping("/receive")
+    @Operation(summary = "依次接收（定数）")
+    @PostMapping("/receive")
     public ResponseEntity<Result<List<StandardEntity>>> receive(
             @RequestParam(name = "count", defaultValue = "1")
             @Positive(message = "接收数量必须为正")
@@ -50,8 +49,8 @@ public class MqController {
         return ResponseEntity.ok().body(Result.success(message, messages));
     }
 
-    // 依次接收（全部）
-    @RequestMapping("/receive-batch")
+    @Operation(summary = "依次接收（全部）")
+    @PostMapping("/receive-batch")
     public ResponseEntity<Result<List<StandardEntity>>> receiveBatch(
             @RequestParam(name = "count", defaultValue = "1")
             @Positive(message = "接收数量必须为正")
@@ -65,8 +64,8 @@ public class MqController {
     }
 
     // ===== 消息队列发布 =====
-    // 逐项发送
-    @RequestMapping("/send")
+    @Operation(summary = "逐项发送")
+    @PostMapping("/send")
     public ResponseEntity<Result<Void>> send(
             @RequestBody
             @NotEmpty(message = "发送的载荷不能为空")
@@ -79,8 +78,8 @@ public class MqController {
         return ResponseEntity.ok().body(Result.success(message, null));
     }
 
-    // 分批发送
-    @RequestMapping("/send-batch")
+    @Operation(summary = "分批发送")
+    @PostMapping("/send-batch")
     public ResponseEntity<Result<Void>> sendBatch(
             @RequestBody
             @NotEmpty(message = "发送的载荷不能为空")

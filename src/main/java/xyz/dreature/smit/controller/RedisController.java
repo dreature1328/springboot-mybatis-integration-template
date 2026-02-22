@@ -1,5 +1,7 @@
 package xyz.dreature.smit.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,18 +20,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-// 测试接口（Redis 操作）
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/redis")
-@Validated
+@Tag(name = "Redis 操作")
 public class RedisController {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     // ===== Key 操作 =====
-    // 删除指定键
-    @RequestMapping("/key/delete")
+    @Operation(summary = "删除指定键")
+    @PostMapping("/key/delete")
     public ResponseEntity<Result> deleteKey(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -42,8 +44,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success(message, result));
     }
 
-    // 检查键是否存在
-    @RequestMapping("/key/exist")
+    @Operation(summary = "检查键是否存在")
+    @GetMapping("/key/exist")
     public ResponseEntity<Result> hasKey(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -56,8 +58,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success(message, exists));
     }
 
-    // 设置键过期时间
-    @RequestMapping("/key/expire")
+    @Operation(summary = "设置键过期时间")
+    @PostMapping("/key/expire")
     public ResponseEntity<Result> setExpire(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -78,8 +80,8 @@ public class RedisController {
     }
 
     // ===== String 操作 =====
-    // 设置键值对
-    @RequestMapping("/string/set")
+    @Operation(summary = "设置键值对")
+    @PostMapping("/string/set")
     public ResponseEntity<Result> setStringValue(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -109,8 +111,8 @@ public class RedisController {
         }
     }
 
-    // 获取键值
-    @RequestMapping("/string/get")
+    @Operation(summary = "获取键值")
+    @GetMapping("/string/get")
     public ResponseEntity<Result> getStringValue(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -123,8 +125,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success(message, value));
     }
 
-    // 键不存在时设置值
-    @RequestMapping("/string/set-if-absent")
+    @Operation(summary = "键不存在时设置值")
+    @PostMapping("/string/set-if-absent")
     public ResponseEntity<Result> setStringIfAbsent(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -141,8 +143,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success(message, result));
     }
 
-    // 值递增操作
-    @RequestMapping("/string/increment")
+    @Operation(summary = "值递增操作")
+    @PostMapping("/string/increment")
     public ResponseEntity<Result> incrementStringValue(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -159,8 +161,8 @@ public class RedisController {
     }
 
     // ===== Hash 操作 =====
-    // 设置哈希字段值
-    @RequestMapping("/hash/set")
+    @Operation(summary = "设置哈希字段值")
+    @PostMapping("/hash/set")
     public ResponseEntity<Result> setHash(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -179,8 +181,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success("设置哈希字段成功", null));
     }
 
-    // 获取哈希字段值
-    @RequestMapping("/hash/get")
+    @Operation(summary = "获取哈希字段值")
+    @GetMapping("/hash/get")
     public ResponseEntity<Result> getHash(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -197,8 +199,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success(message, value));
     }
 
-    // 获取整个哈希表
-    @RequestMapping("/hash/all")
+    @Operation(summary = "获取整个哈希表")
+    @GetMapping("/hash/all")
     public ResponseEntity<Result> getAllHash(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -212,8 +214,8 @@ public class RedisController {
 
     }
 
-    // 删除哈希字段
-    @DeleteMapping("/hash/delete")
+    @Operation(summary = "删除哈希字段")
+    @PostMapping("/hash/delete")
     public ResponseEntity<Result> deleteHash(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -230,8 +232,8 @@ public class RedisController {
     }
 
     // ===== List 操作 =====
-    // 左端添加元素
-    @RequestMapping("/list/push-left")
+    @Operation(summary = "左端添加元素")
+    @PostMapping("/list/push-left")
     public ResponseEntity<Result> leftPushToList(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -248,8 +250,8 @@ public class RedisController {
 
     }
 
-    // 右端添加元素
-    @RequestMapping("/list/push-right")
+    @Operation(summary = "右端添加元素")
+    @PostMapping("/list/push-right")
     public ResponseEntity<Result> rightPushToList(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -265,8 +267,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success("右端添加元素成功", size));
     }
 
-    // 获取列表范围元素
-    @RequestMapping("/list/range")
+    @Operation(summary = "获取列表范围元素")
+    @GetMapping("/list/range")
     public ResponseEntity<Result> getListRange(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -286,8 +288,8 @@ public class RedisController {
 
     }
 
-    // 获取列表长度
-    @RequestMapping("/list/size")
+    @Operation(summary = "获取列表长度")
+    @GetMapping("/list/size")
     public ResponseEntity<Result> getListSize(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -299,8 +301,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success("获取列表长度成功", size));
     }
 
-    // 左端弹出元素
-    @RequestMapping("/list/pop-left")
+    @Operation(summary = "左端弹出元素")
+    @PostMapping("/list/pop-left")
     public ResponseEntity<Result> leftPopFromList(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -312,8 +314,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success("左端弹出元素成功", value));
     }
 
-    // 右端弹出元素
-    @RequestMapping("/list/pop-right")
+    @Operation(summary = "右端弹出元素")
+    @PostMapping("/list/pop-right")
     public ResponseEntity<Result> rightPopFromList(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -327,8 +329,8 @@ public class RedisController {
 
 
     // ===== Set 操作 =====
-    // 添加集合元素
-    @RequestMapping("/set/add")
+    @Operation(summary = "添加集合元素")
+    @PostMapping("/set/add")
     public ResponseEntity<Result> addToSet(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -344,8 +346,8 @@ public class RedisController {
         return ResponseEntity.ok(Result.success("添加集合元素成功", result));
     }
 
-    // 获取集合所有元素
-    @RequestMapping("/set/members")
+    @Operation(summary = "获取集合所有元素")
+    @GetMapping("/set/members")
     public ResponseEntity<Result> getSetMembers(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -360,8 +362,8 @@ public class RedisController {
     }
 
     // ===== ZSet 操作 =====
-    // 添加有序集合元素
-    @RequestMapping("/zset/add")
+    @Operation(summary = "添加有序集合元素")
+    @PostMapping("/zset/add")
     public ResponseEntity<Result> addToZSet(
             @RequestParam
             @NotBlank(message = "键不能为空")
@@ -382,8 +384,8 @@ public class RedisController {
 
     }
 
-    // 获取有序集合范围元素
-    @RequestMapping("/zset/range")
+    @Operation(summary = "获取有序集合范围元素")
+    @GetMapping("/zset/range")
     public ResponseEntity<Result> getZSetRange(
             @RequestParam
             @NotBlank(message = "键不能为空")

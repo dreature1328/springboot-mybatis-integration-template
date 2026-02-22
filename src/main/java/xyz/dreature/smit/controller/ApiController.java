@@ -1,10 +1,13 @@
 package xyz.dreature.smit.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,18 +20,18 @@ import javax.validation.constraints.Positive;
 import java.util.List;
 import java.util.Map;
 
-// 测试接口（API 操作）
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/api")
-@Validated
+@Tag(name = "API 操作")
 public class ApiController {
     @Autowired
     private ApiService<JsonNode> apiService;
 
     // ===== API 抽取 =====
-    // 依次同步请求
-    @RequestMapping("/call")
+    @Operation(summary = "依次同步请求")
+    @PostMapping("/call")
     public ResponseEntity<Result<List<JsonNode>>> call(
             @RequestParam(name = "params")
             @NotEmpty(message = "请求参数不能为空")
@@ -42,8 +45,8 @@ public class ApiController {
         return ResponseEntity.ok().body(Result.success(message, responses));
     }
 
-    // 分批异步请求
-    @RequestMapping("/call-batch")
+    @Operation(summary = "分批异步请求")
+    @PostMapping("/call-batch")
     public ResponseEntity<Result<List<JsonNode>>> callBatch(
             @RequestParam(name = "params")
             @NotEmpty(message = "请求参数不能为空")

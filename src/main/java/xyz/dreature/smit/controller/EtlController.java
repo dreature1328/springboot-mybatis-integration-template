@@ -1,15 +1,14 @@
 package xyz.dreature.smit.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.w3c.dom.Document;
 import xyz.dreature.smit.common.model.context.Context;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
@@ -24,11 +23,11 @@ import javax.validation.constraints.Positive;
 import java.util.List;
 import java.util.Map;
 
-// 测试接口（数据集成）
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/etl")
-@Validated
+@Tag(name = "数据集成")
 public class EtlController {
     @Autowired
     private MockService mockService;
@@ -62,8 +61,8 @@ public class EtlController {
     private EtlOrchestrator<StandardEntity, StandardEntity, Long> orch6;
 
     // ===== 模拟数据源集成 =====
-    // 单次集成
-    @RequestMapping("/mock/run")
+    @Operation(summary = "单次集成")
+    @PostMapping("/mock/run")
     public ResponseEntity<Result<String>> mockRun(
             @RequestParam(name = "data-size", defaultValue = "10")
             @Positive(message = "数据大小必须为正")
@@ -78,8 +77,8 @@ public class EtlController {
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
-    // 单次集成（内部分批）
-    @RequestMapping("/mock/run-batch")
+    @Operation(summary = "单次集成（内部分批）")
+    @PostMapping("/mock/run-batch")
     public ResponseEntity<Result<String>> mockRunBatch(
             @RequestParam(name = "data-size", defaultValue = "10")
             @Positive(message = "数据大小必须为正")
@@ -95,8 +94,8 @@ public class EtlController {
     }
 
     // ===== 文件数据源集成 =====
-    // 单次集成
-    @RequestMapping("/file/run")
+    @Operation(summary = "单次集成")
+    @PostMapping("/file/run")
     public ResponseEntity<Result<String>> fileRun(
             @RequestBody
             @NotEmpty(message = "文件参数不能为空")
@@ -113,8 +112,8 @@ public class EtlController {
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
-    // 单次集成（内部分批）
-    @RequestMapping("/file/run-batch")
+    @Operation(summary = "单次集成（内部分批）")
+    @PostMapping("/file/run-batch")
     public ResponseEntity<Result<String>> fileRunBatch(
             @RequestBody
             @NotEmpty(message = "文件参数不能为空")
@@ -131,8 +130,8 @@ public class EtlController {
     }
 
     // ===== 数据库数据源集成 =====
-    // 单次集成
-    @RequestMapping("/db/run")
+    @Operation(summary = "单次集成")
+    @PostMapping("/db/run")
     public ResponseEntity<Result<String>> dbRun(
             @RequestBody
             @NotEmpty(message = "数据库参数不能为空")
@@ -148,8 +147,8 @@ public class EtlController {
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
-    // 单次集成（内部分批）
-    @RequestMapping("/db/run-batch")
+    @Operation(summary = "单次集成（内部分批）")
+    @PostMapping("/db/run-batch")
     public ResponseEntity<Result<String>> dbRunBatch(
             @RequestBody
             @NotEmpty(message = "数据库参数不能为空")
@@ -166,8 +165,8 @@ public class EtlController {
     }
 
     // ===== 消息队列数据源集成 =====
-    // 单次集成
-    @RequestMapping("/mq/run")
+    @Operation(summary = "单次集成")
+    @PostMapping("/mq/run")
     public ResponseEntity<Result<String>> mqRun(
             @RequestBody
             @NotEmpty(message = "消息队列参数不能为空")
@@ -182,8 +181,8 @@ public class EtlController {
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
 
-    // 单次集成（内部分批）
-    @RequestMapping("/mq/run-batch")
+    @Operation(summary = "单次集成（内部分批）")
+    @PostMapping("/mq/run-batch")
     public ResponseEntity<Result<String>> mqRunBatch(
             @RequestBody
             @NotEmpty(message = "消息队列参数不能为空")

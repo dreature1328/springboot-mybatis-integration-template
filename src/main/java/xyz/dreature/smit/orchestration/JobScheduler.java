@@ -23,8 +23,8 @@ public class JobScheduler {
     private TaskScheduler taskScheduler;
 
     // 添加新任务到调度池
-    public void scheduleJob(Job job) {
-        Runnable task = createTask(job);
+    public void schedule(Job job) {
+        Runnable task = create(job);
         Trigger trigger = new CronTrigger(job.getCronExpression());
 
         ScheduledFuture<?> future = taskScheduler.schedule(task, trigger);
@@ -32,7 +32,7 @@ public class JobScheduler {
     }
 
     // 创建任务
-    private Runnable createTask(Job job) {
+    private Runnable create(Job job) {
         return () -> {
             Orchestrator orchestrator = applicationContext.getBean(
                     job.getOrchestratorName(),
@@ -45,7 +45,7 @@ public class JobScheduler {
     }
 
     // 取消任务
-    public void cancelJob(String jobId) {
+    public void cancel(String jobId) {
         ScheduledFuture<?> future = scheduledTasks.get(jobId);
         if (future != null) {
             future.cancel(true);

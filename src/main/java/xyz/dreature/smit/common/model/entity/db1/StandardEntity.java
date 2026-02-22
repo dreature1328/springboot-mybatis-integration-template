@@ -1,31 +1,36 @@
 package xyz.dreature.smit.common.model.entity.db1;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.validation.constraints.*;
 
-// 基础实体
+@Schema(description = "基础实体")
 public class StandardEntity {
     // ===== 字段 =====
     @NotNull(message = "ID 不能为空")
-    @Min(value = 1, message = "ID 必须为正")
-    @Max(value = Long.MAX_VALUE, message = "ID 范围受限")
-    private Long id;              // 唯一标识符
+    @Positive(message = "ID 必须为正")
+    @Schema(description = "ID")
+    private Long id;
 
     @NotNull(message = "整型字段不能为空")
     @Min(value = 0, message = "整型字段不能为负")
-    @Max(value = Integer.MAX_VALUE, message = "整型字段范围受限")
-    private Integer numericValue; // 整型数值
+    @Schema(description = "整型数值")
+    private Integer numericValue;
 
     @NotNull(message = "浮点字段不能为空")
     @DecimalMin(value = "0.0", message = "浮点字段不能为负")
     @Digits(integer = 15, fraction = 6, message = "浮点字段整数位不超过 15 位，小数位不超过 6 位")
-    private Double decimalValue;  // 浮点数值
+    @Schema(description = "浮点数值")
+    private Double decimalValue;
 
     @NotBlank(message = "文本字段不能为空")
     @Size(min = 1, max = 255, message = "文本字段范围受限")
-    private String textContent;   // 文本内容
+    @Schema(description = "文本内容")
+    private String textContent;
 
     @NotNull(message = "布尔字段不能为空")
-    private Boolean activeFlag;   // 激活标志
+    @Schema(description = "激活标志")
+    private Boolean activeFlag;
 
     // ===== 构造方法 =====
     // 无参构造器

@@ -1,39 +1,48 @@
 package xyz.dreature.smit.common.model.entity.db2;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
 
-// 高级实体
+@Schema(description = "高级实体")
 public class AdvancedEntity {
     // ===== 字段 =====
     @NotNull(message = "ID 不能为空")
     @Min(value = 1, message = "ID 必须为正")
-    @Max(value = Long.MAX_VALUE, message = "ID 范围受限")
-    private Long id;              // 唯一标识符
+    @Schema(description = "ID")
+    private Long id;
 
     @NotBlank(message = "业务编码不能为空")
     @Size(min = 3, max = 32)
-    private String code;       // 业务编码
+    @Schema(description = "业务编码")
+    private String code;
 
     @NotBlank(message = "名称不能为空")
     @Size(min = 1, max = 100)
-    private String name;    // 实体名称
+    @Schema(description = "实体名称")
+    private String name;
 
     @NotNull
     @Min(0)
     @Max(10)
+    @Schema(description = "状态")
     private Integer status;
 
     // PostgreSQL 支持
-    private Map<String, Object> attributes;      // 动态属性（JSONB）
+    @Schema(description = "动态属性（JSONB）")
+    private Map<String, Object> attributes;
 
-    private String[] tags; // 标签数组（varchar[]）
+    @Schema(description = "标签数组（varchar[]）")
+    private String[] tags;
 
-    private LocalDateTime createdAt;           // 创建时间（自动生成）
+    @Schema(description = "创建时间（自动生成）")
+    private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;           // 更新时间（触发器更新）
+    @Schema(description = "更新时间（触发器更新）")
+    private LocalDateTime updatedAt;
 
     // 无参构造器
     public AdvancedEntity() {

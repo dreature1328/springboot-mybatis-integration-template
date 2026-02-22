@@ -1,20 +1,36 @@
 package xyz.dreature.smit.common.model.context;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 // 上下文
 public class Context {
     // ===== 字段 =====
+    @Schema(description = "任务 ID")
     private String jobId;
 
-    private int extractBatchSize; // 抽取批大小
-    private int transformBatchSize; // 转换批大小
-    private int loadBatchSize; // 加载批大小
+    @Schema(description = "抽取批大小")
+    private int extractBatchSize;
 
-    private String extractStrategy; // 抽取策略
-    private String transformStrategy; // 转换策略（保留）
-    private String loadStrategy; // 加载策略（保留）
+    @Schema(description = "转换批大小")
+    private int transformBatchSize;
 
-    private String sourceDataSource; // 抽取源头数据源
-    private String targetDataSource; // 加载目标数据源
+    @Schema(description = "加载批大小")
+    private int loadBatchSize;
+
+    @Schema(description = "抽取策略")
+    private String extractStrategy;
+
+    @Schema(description = "转换策略（保留）")
+    private String transformStrategy;
+
+    @Schema(description = "加载策略（保留）")
+    private String loadStrategy;
+
+    @Schema(description = "抽取源头数据源")
+    private String sourceDataSource;
+
+    @Schema(description = "加载目标数据源")
+    private String targetDataSource;
 
     // ===== 构造方法 =====
     // 无参构造器

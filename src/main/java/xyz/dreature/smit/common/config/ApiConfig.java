@@ -30,7 +30,6 @@ public class ApiConfig {
         headers.put(headerKey, headerValue);
 
         return new ApiServiceImpl<>(
-                JsonNode.class,
                 baseUrl,
                 method,
                 headers,

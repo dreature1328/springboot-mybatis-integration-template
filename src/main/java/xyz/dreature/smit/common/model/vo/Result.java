@@ -1,16 +1,27 @@
 package xyz.dreature.smit.common.model.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 import java.time.Instant;
 
-// 响应结果
+@Schema(description = "响应结果")
 public class Result<T> implements Serializable {
     // ===== 字段 =====
-    private boolean success; // 操作是否成功
-    private String code;     // 业务状态码
-    private String message;  // 人类可读消息
-    private T data;          // 业务数据
-    private long timestamp;  // 响应时间戳（毫秒）
+    @Schema(description = "操作是否成功", example = "true")
+    private boolean success;
+
+    @Schema(description = "业务状态码", example = "SUCCESS")
+    private String code;
+
+    @Schema(description = "人类可读消息", example = "操作成功")
+    private String message;
+
+    @Schema(description = "业务数据")
+    private T data;
+
+    @Schema(description = "响应时间戳（毫秒）")
+    private long timestamp;
 
     // ===== 构造方法 =====
     // 无参构造器

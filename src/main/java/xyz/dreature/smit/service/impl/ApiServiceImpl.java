@@ -1,5 +1,7 @@
 package xyz.dreature.smit.service.impl;
 
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.core.util.TypeUtil;
 import xyz.dreature.smit.common.util.BatchUtils;
 import xyz.dreature.smit.common.util.HttpUtils;
 import xyz.dreature.smit.service.ApiService;
@@ -19,13 +21,13 @@ public class ApiServiceImpl<T> implements ApiService<T> {
     private final Executor executor;
 
     public ApiServiceImpl(
-            Class<T> responseType,
             String baseUrl,
             String method,
             Map<String, String> headers,
             Executor executor
     ) {
-        this.responseType = responseType;
+        this.responseType = (Class<T>) TypeUtil.getTypeArgument(new TypeReference<ApiService<T>>() {
+        }, 0);
         this.baseUrl = baseUrl;
         this.method = method;
         this.headers = headers;

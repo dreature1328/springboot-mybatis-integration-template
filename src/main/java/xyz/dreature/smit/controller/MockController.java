@@ -1,10 +1,13 @@
 package xyz.dreature.smit.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,17 +18,17 @@ import xyz.dreature.smit.service.MockService;
 import javax.validation.constraints.Positive;
 import java.util.List;
 
-// 测试接口（模拟操作）
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/mock")
-@Validated
+@Tag(name = "模拟操作")
 public class MockController {
     @Autowired
     MockService mockService;
 
-    // 生成模拟数据
-    @RequestMapping("/generate-data")
+    @Operation(summary = "生成模拟数据")
+    @PostMapping("/generate-data")
     public ResponseEntity<Result<List<StandardEntity>>> generateMockData(
             @RequestParam(name = "count", defaultValue = "10")
             @Positive(message = "生成数量必须为正")
@@ -38,8 +41,8 @@ public class MockController {
         return ResponseEntity.ok().body(Result.success(message, result));
     }
 
-//    // 生成模拟参数
-//    @RequestMapping("/generate-params")
+//    @Operation(summary = "生成模拟参数")
+//    @PostMapping("/generate-params")
 //    public ResponseEntity<Result<List<Map<String, ?>>>> generateMockParams(
 //            @RequestParam(name = "count", defaultValue = "10")
 //            @Positive(message = "生成数量必须为正")
@@ -52,8 +55,8 @@ public class MockController {
 //        return ResponseEntity.ok().body(Result.success(message, result));
 //    }
 
-    // 生成模拟响应
-    @RequestMapping("/generate-responses")
+    @Operation(summary = "生成模拟响应")
+    @PostMapping("/generate-responses")
     public ResponseEntity<Result<List<JsonNode>>> generateMockResponses(
             @RequestParam(name = "count", defaultValue = "10")
             @Positive(message = "生成数量必须为正")

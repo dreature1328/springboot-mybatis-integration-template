@@ -1,22 +1,33 @@
 package xyz.dreature.smit.common.model.job;
 
+import cn.hutool.core.util.IdUtil;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-// 任务
+@Schema(description = "任务实体")
 public class Job {
     // ===== 字段 =====
-    private String jobId;          // 任务 ID
-    private String jobName;        // 任务名称
-    private String cronExpression; // cron 表达式
-    private String orchestratorName; // 编排器 Bean 名
+    @Schema(description = "任务 ID")
+    private String jobId;
+
+    @Schema(description = "任务名称")
+    private String jobName;
+
+    @Schema(description = "Cron 表达式")
+    private String cronExpression;
+
+    @Schema(description = "编排器 Bean 名")
+    private String orchestratorName;
+
+    @Schema(description = "任务参数")
     private List<Map<String, Object>> params; // 任务参数
 
     // ===== 构造方法 =====
     // 无参构造器
     public Job() {
-        this.jobId = UUID.randomUUID().toString();
+        this.jobId = "JOB" + "-" + IdUtil.objectId();
     }
 
     // 全参构造器

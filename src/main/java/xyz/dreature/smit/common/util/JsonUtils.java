@@ -6,15 +6,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
+import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
 public class JsonUtils {
-
     public static final String STANDARD_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final ObjectMapper DEFAULT_MAPPER = createDefaultMapper();
     public static final ObjectMapper SNAKE_CASE_MAPPER = createSnakeCaseMapper();
@@ -41,13 +42,27 @@ public class JsonUtils {
     }
 
     public static JsonNode parseFile(String filePath) {
+        return parseFile(new File(filePath));
+    }
+
+    public static JsonNode parseFile(File file) {
         try {
-            return DEFAULT_MAPPER.readTree(new File(filePath));
+            return DEFAULT_MAPPER.readTree(file);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
+
+    public static JsonNode parseFile(Resource resource) {
+        try (InputStream is = resource.getInputStream()) {
+            return DEFAULT_MAPPER.readTree(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     public static String objectToJson(Object object) {
         if (object == null) return null;

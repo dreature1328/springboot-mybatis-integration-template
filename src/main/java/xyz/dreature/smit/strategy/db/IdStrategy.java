@@ -42,10 +42,11 @@ public class IdStrategy<S, ID extends Serializable> implements ExtractStrategy<S
         String dataSource = (String) queriesParams.get(0).get("dataSource");
         DbService<S, ID> service = registry.getService(dataSource);
 
-        List<ID> ids = new ArrayList<>();
+        List<ID> idList = new ArrayList<>();
         for (Map<String, ?> queryParams : queriesParams) {
-            ids.add((ID) queryParams.get("id"));
+            ID id = (ID) queryParams.get("id");
+            idList.add(id);
         }
-        return service.selectBatchByIds(ids);
+        return service.selectBatchByIds(idList);
     }
 }

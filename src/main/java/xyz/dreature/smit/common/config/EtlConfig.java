@@ -7,10 +7,7 @@ import org.springframework.context.annotation.Lazy;
 import org.w3c.dom.Document;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.entity.db2.AdvancedEntity;
-import xyz.dreature.smit.component.extractor.impl.DbExtractor;
-import xyz.dreature.smit.component.extractor.impl.FileExtractor;
-import xyz.dreature.smit.component.extractor.impl.MockExtractor;
-import xyz.dreature.smit.component.extractor.impl.MqExtractor;
+import xyz.dreature.smit.component.extractor.impl.*;
 import xyz.dreature.smit.component.loader.impl.DbLoader;
 import xyz.dreature.smit.component.transformer.impl.*;
 import xyz.dreature.smit.orchestration.EtlOrchestrator;
@@ -57,7 +54,7 @@ public class EtlConfig {
 
     @Bean("file22->db2")
     @Lazy
-    public EtlOrchestrator<Document, AdvancedEntity, Long> fil22ToDb2Orchestrator(
+    public EtlOrchestrator<Document, AdvancedEntity, Long> file22ToDb2Orchestrator(
             FileExtractor extractor,
             XmlAdvancedTransformer transformer,
             DbLoader loader) {
@@ -67,7 +64,7 @@ public class EtlConfig {
     @Bean("api->db1")
     @Lazy
     public EtlOrchestrator<JsonNode, StandardEntity, Long> apiToDb1Orchestrator(
-            MockExtractor extractor,
+            ApiExtractor extractor,
             JsonStandardTransformer transformer,
             DbLoader loader) {
         return new EtlOrchestrator<>(extractor, transformer, loader);
@@ -88,7 +85,6 @@ public class EtlConfig {
             MqExtractor extractor,
             IdentityTransformer transformer,
             DbLoader loader) {
-
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
 }

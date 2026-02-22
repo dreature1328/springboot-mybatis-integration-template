@@ -1,21 +1,39 @@
 package xyz.dreature.smit.common.model.metrics;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 // ETL 指标
 public class EtlMetrics {
     //  ===== 计数指标（线程安全） =====
-    private final AtomicInteger sourceUnits = new AtomicInteger(0);      // 源数据单元数（消息/记录/文件等）
-    private final AtomicInteger extractedItems = new AtomicInteger(0);   // 已抽取数据项数
-    private final AtomicInteger transformedItems = new AtomicInteger(0); // 成功转换数据项数
-    private final AtomicInteger loadedItems = new AtomicInteger(0);      // 成功加载数据项数
-    private final AtomicInteger errors = new AtomicInteger(0);           // 错误计数
+    @Schema(description = "源数据单元数（消息/记录/文件等）")
+    private final AtomicInteger sourceUnits = new AtomicInteger(0);
+
+    @Schema(description = "已抽取数据项数")
+    private final AtomicInteger extractedItems = new AtomicInteger(0);
+
+    @Schema(description = "成功转换数据项数")
+    private final AtomicInteger transformedItems = new AtomicInteger(0);
+
+    @Schema(description = "成功加载数据项数")
+    private final AtomicInteger loadedItems = new AtomicInteger(0);
+
+    @Schema(description = "错误计数")
+    private final AtomicInteger errors = new AtomicInteger(0);
 
     // ===== 时间点指标（毫秒级） =====
-    private long extractStartTime;      // 数据抽取开始时间
-    private long extractEndTime;        // 数据抽取结束时间
-    private long transformEndTime;      // 数据转换结束时间
-    private long loadEndTime;           // 数据加载结束时间
+    @Schema(description = "数据抽取开始时间")
+    private long extractStartTime;
+
+    @Schema(description = "数据抽取结束时间")
+    private long extractEndTime;
+
+    @Schema(description = "数据转换结束时间")
+    private long transformEndTime;
+
+    @Schema(description = "数据加载结束时间")
+    private long loadEndTime;
 
     // ===== 时间点标记 =====
     public void markExtractStart() {
