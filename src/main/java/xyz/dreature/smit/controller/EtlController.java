@@ -13,6 +13,7 @@ import org.w3c.dom.Document;
 import xyz.dreature.smit.common.model.context.Context;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.entity.db2.AdvancedEntity;
+import xyz.dreature.smit.common.model.entity.db2.GeoEntity;
 import xyz.dreature.smit.common.model.metrics.EtlMetrics;
 import xyz.dreature.smit.common.model.vo.Result;
 import xyz.dreature.smit.orchestration.EtlOrchestrator;
@@ -45,20 +46,24 @@ public class EtlController {
     private EtlOrchestrator<Document, StandardEntity, Long> orch2;
 
     @Autowired
-    @Qualifier("file21->db2")
+    @Qualifier("file21->db2:adv")
     private EtlOrchestrator<JsonNode, AdvancedEntity, Long> orch3;
 
     @Autowired
-    @Qualifier("file22->db2")
+    @Qualifier("file22->db2:adv")
     private EtlOrchestrator<Document, AdvancedEntity, Long> orch4;
 
     @Autowired
+    @Qualifier("file3->db2:geo")
+    private EtlOrchestrator<JsonNode, GeoEntity, Long> orch5;
+
+    @Autowired
     @Qualifier("db1->db1")
-    private EtlOrchestrator<StandardEntity, StandardEntity, Long> orch5;
+    private EtlOrchestrator<StandardEntity, StandardEntity, Long> orch6;
 
     @Autowired
     @Qualifier("mq->db1")
-    private EtlOrchestrator<StandardEntity, StandardEntity, Long> orch6;
+    private EtlOrchestrator<StandardEntity, StandardEntity, Long> orch7;
 
     // ===== 模拟数据源集成 =====
     @Operation(summary = "单次集成")
@@ -120,11 +125,11 @@ public class EtlController {
             List<? extends Map<String, Object>> filesParams
     ) {
         Context context = new Context();
-        context.setSourceDataSource("file21");
-        context.setTargetDataSource("db2");
+        context.setSourceDataSource("file3");
+        context.setTargetDataSource("db2:geo");
         context.setExtractStrategy("file:full");
         context.setLoadStrategy("db:upsert");
-        EtlMetrics stats = orch3.runBatch(context, filesParams);
+        EtlMetrics stats = orch5.runBatch(context, filesParams);
         log.info("文件数据源集成完成，报告：{}", stats);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -142,7 +147,7 @@ public class EtlController {
         context.setTargetDataSource("db1");
         context.setExtractStrategy("db:ids");
         context.setLoadStrategy("db:upsert");
-        EtlMetrics stats = orch5.run(context, queriesParams);
+        EtlMetrics stats = orch6.run(context, queriesParams);
         log.info("数据库数据源集成完成，报告：{}", stats);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -155,11 +160,11 @@ public class EtlController {
             List<? extends Map<String, Object>> queriesParams
     ) {
         Context context = new Context();
-        context.setSourceDataSource("db2");
-        context.setTargetDataSource("db2");
+        context.setSourceDataSource("db2:adv");
+        context.setTargetDataSource("db2:adv");
         context.setExtractStrategy("db:ids");
         context.setLoadStrategy("db:upsert");
-        EtlMetrics stats = orch5.runBatch(context, queriesParams);
+        EtlMetrics stats = orch6.runBatch(context, queriesParams);
         log.info("数据库数据源集成完成，报告：{}", stats);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -176,7 +181,7 @@ public class EtlController {
         context.setSourceDataSource("mq");
         context.setTargetDataSource("db1");
         context.setLoadStrategy("db:upsert");
-        EtlMetrics stats = orch6.run(context, params);
+        EtlMetrics stats = orch7.run(context, params);
         log.info("消息队列数据源集成完成，报告：{}", stats);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }
@@ -192,7 +197,7 @@ public class EtlController {
         context.setSourceDataSource("mq");
         context.setTargetDataSource("db1");
         context.setLoadStrategy("db:upsert");
-        EtlMetrics stats = orch6.runBatch(context, params);
+        EtlMetrics stats = orch7.runBatch(context, params);
         log.info("消息队列数据源集成完成，报告：{}", stats);
         return ResponseEntity.ok().body(Result.success(stats.generateReport(), null));
     }

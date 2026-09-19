@@ -11,6 +11,9 @@ target/
 ### VS Code ###
 .vscode/
 
+### Agent ###
+.ai/
+
 ### Custom ###
 TODO.md
 backup/

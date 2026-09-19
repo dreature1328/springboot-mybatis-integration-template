@@ -59,7 +59,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.8</version>
+            <version>42.7.13</version>
+        </dependency>
+        <dependency>
+            <groupId>net.postgis</groupId>
+            <artifactId>postgis-jdbc-jts</artifactId>
+            <version>2025.1.1</version>
         </dependency>
         <!-- Spring Boot Redis 依赖-->
         <dependency>
@@ -75,13 +80,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.42</version>
+            <version>1.18.46</version>
         </dependency>
         <!--  Hutool 核心工具包依赖 -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>
-            <version>5.8.43</version>
+            <version>5.8.47</version>
         </dependency>
         <!-- Spring Doc OpenAPI 依赖 -->
         <dependency>

@@ -74,4 +74,18 @@ public class FileConfig {
                 executor
         );
     }
+
+    @Bean
+    @Lazy
+    public FileService<JsonNode> geoJsonFileService(
+            ResourceLoader resourceLoader,
+            @Qualifier("ioExecutor") Executor executor
+    ) {
+        return new FileServiceImpl<>(
+                "file3",
+                resourceLoader,
+                JsonUtils::parseFile,
+                executor
+        );
+    }
 }

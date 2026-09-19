@@ -16,8 +16,10 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.entity.db2.AdvancedEntity;
+import xyz.dreature.smit.common.model.entity.db2.GeoEntity;
 import xyz.dreature.smit.mapper.db1.StandardMapper;
 import xyz.dreature.smit.mapper.db2.AdvancedMapper;
+import xyz.dreature.smit.mapper.db2.GeoMapper;
 import xyz.dreature.smit.service.DbService;
 import xyz.dreature.smit.service.impl.DbServiceImpl;
 
@@ -132,8 +134,15 @@ public class DbConfig {
     @Bean
     @Lazy
     public DbService<AdvancedEntity, Long> advancedDbService(AdvancedMapper advancedMapper) {
-        return new DbServiceImpl<>("db2", advancedMapper);
+        return new DbServiceImpl<>("db2:adv", advancedMapper);
     }
+
+    @Bean
+    @Lazy
+    public DbService<GeoEntity, Long> geoDbService(GeoMapper geoMapper) {
+        return new DbServiceImpl<>("db2:geo", geoMapper);
+    }
+
 
     // ===== MyBatis 映射器扫描配置 =====
     // 指定包扫描路径与会话工厂

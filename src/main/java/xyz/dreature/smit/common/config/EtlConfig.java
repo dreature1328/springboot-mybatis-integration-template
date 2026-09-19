@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Lazy;
 import org.w3c.dom.Document;
 import xyz.dreature.smit.common.model.entity.db1.StandardEntity;
 import xyz.dreature.smit.common.model.entity.db2.AdvancedEntity;
+import xyz.dreature.smit.common.model.entity.db2.GeoEntity;
 import xyz.dreature.smit.component.extractor.impl.*;
 import xyz.dreature.smit.component.loader.impl.DbLoader;
 import xyz.dreature.smit.component.transformer.impl.*;
@@ -43,7 +44,7 @@ public class EtlConfig {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
 
-    @Bean("file21->db2")
+    @Bean("file21->db2:adv")
     @Lazy
     public EtlOrchestrator<JsonNode, AdvancedEntity, Long> file21ToDb2Orchestrator(
             FileExtractor extractor,
@@ -52,11 +53,20 @@ public class EtlConfig {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }
 
-    @Bean("file22->db2")
+    @Bean("file22->db2:adv")
     @Lazy
     public EtlOrchestrator<Document, AdvancedEntity, Long> file22ToDb2Orchestrator(
             FileExtractor extractor,
             XmlAdvancedTransformer transformer,
+            DbLoader loader) {
+        return new EtlOrchestrator<>(extractor, transformer, loader);
+    }
+
+    @Bean("file3->db2:geo")
+    @Lazy
+    public EtlOrchestrator<JsonNode, GeoEntity, Long> file3ToDb2GeoOrchestrator(
+            FileExtractor extractor,
+            JsonGeoTransformer transformer,
             DbLoader loader) {
         return new EtlOrchestrator<>(extractor, transformer, loader);
     }

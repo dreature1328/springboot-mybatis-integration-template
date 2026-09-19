@@ -106,6 +106,20 @@ ETL 组件实现“单项”和“单批”（若有）原子化操作，而“�
 | createdAt  | created_at | LocalDateTime ↔ TIMESTAMP |
 | updatedAt  | updated_at | LocalDateTime ↔ TIMESTAMP |
 
+- 几何实体 `GeoEntity` 映射 PostgreSQL 数据表（集成 PostGIS 空间扩展）
+
+| 实体字段    | 表字段       | 类型映射                          |
+| ----------- | ------------ | --------------------------------- |
+| id          | id           | Long ↔ BIGSERIAL                  |
+| featureId   | feature_id   | String ↔ VARCHAR(32)              |
+| featureName | feature_name | String ↔ VARCHAR(100)             |
+| geom        | geom         | String ↔ GEOMETRY(Geometry, 4326) |
+| geomType    | geom_type    | String ↔ VARCHAR(20)              |
+| centerPoint | center_point | String ↔ GEOMETRY(Point, 4326)    |
+| address     | address      | String ↔ TEXT                     |
+| createdAt   | created_at   | LocalDateTime ↔ TIMESTAMP         |
+| updatedAt   | updated_at   | LocalDateTime ↔ TIMESTAMP         |
+
 ## 任务调度
 
 以任务实体 `Job` 定义定时任务，使用 `TaskScheduler`（Spring 提供）基于 Cron 表达式进行调度，每个任务实际执行编排器 `Orchestrator` 中定义的 ETL 流程。
@@ -121,7 +135,7 @@ GET /db1/select-random?limit=10
 ```
 
 ```http
-GET /db2/select-random?limit=10
+GET /db2-adv/select-random?limit=10
 ```
 
 - 从文件中集成数据（已预置模拟数据文件）

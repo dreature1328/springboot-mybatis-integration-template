@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.smit.mapper.db2.GeoMapper">
+    <!-- ===== 结果映射配置 ===== -->
+    <resultMap id="geoMap" type="xyz.dreature.smit.common.model.entity.db2.GeoEntity">
+        <id property="id" column="id"/>
+        <result property="featureId" column="feature_id"/>
+        <result property="featureName" column="feature_name"/>
+        <!-- 空间几何字段 -->
+        <result property="geom" column="geom"
+                typeHandler="xyz.dreature.smit.common.handler.GeoTypeHandler"/>
+        <result property="geomType" column="geom_type"/>
+        <result property="centerPoint" column="center_point"
+                typeHandler="xyz.dreature.smit.common.handler.GeoTypeHandler"/>
+        <result property="address" column="address"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- ===== 复用 SQL 片段 ===== -->
+    <sql id="table">geo_table</sql>
+    <sql id="columns">
+        id, feature_id, feature_name, geom, geom_type, center_point, address, created_at, updated_at
+    </sql>
+
+    <!-- 值映射（单条插入） -->
+    <sql id="values">
+        #{id}, #{featureId}, #{featureName},
+        #{geom, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        #{geomType},
+        #{centerPoint, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        #{address}, #{createdAt}, #{updatedAt}
+    </sql>
+
+    <!-- 值映射 -->
+    <sql id="itemValues">
+        #{item.id}, #{item.featureId}, #{item.featureName},
+        #{item.geom, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        #{item.geomType},
+        #{item.centerPoint, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        #{item.address}, #{item.createdAt}, #{item.updatedAt}
+    </sql>
+
+    <!-- 更新设置 -->
+    <sql id="set">
+        feature_name = #{featureName},
+        geom = #{geom, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        geom_type = #{geomType},
+        center_point = #{centerPoint, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler},
+        address = #{address},
+        updated_at = CURRENT_TIMESTAMP
+    </sql>
+
+    <!-- 冲突更新设置 -->
+    <sql id="conflictSet">
+        feature_name = EXCLUDED.feature_name,
+        geom = EXCLUDED.geom,
+        geom_type = EXCLUDED.geom_type,
+        center_point = EXCLUDED.center_point,
+        address = EXCLUDED.address,
+        updated_at = CURRENT_TIMESTAMP
+    </sql>
+
+    <!-- ===== 通用基础操作 ===== -->
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全部 -->
+    <select id="selectAll" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全部（游标） -->
+    <select id="selectAllWithCursor" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="int" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+        ORDER BY RANDOM() LIMIT #{limit}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 条件查询 -->
+    <select id="selectByCondition" parameterType="map" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+        <where>
+            <foreach collection="_parameter" index="key" item="value">
+                AND ${key} = #{value}
+            </foreach>
+        </where>
+    </select>
+
+    <!-- 单项查询 -->
+    <select id="selectById" parameterType="long" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+        WHERE id = #{id}
+    </select>
+
+    <!-- 单项插入 -->
+    <select id="selectBatchByIds" resultMap="geoMap">
+        SELECT <include refid="columns"/> FROM <include refid="table"/>
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 单项插入 -->
+    <insert id="insert" parameterType="xyz.dreature.smit.common.model.entity.db2.GeoEntity">
+        INSERT INTO <include refid="table"/> (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+    </insert>
+
+    <!-- 单批插入 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/> (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+    </insert>
+
+    <!-- 单项更新 -->
+    <update id="update" parameterType="xyz.dreature.smit.common.model.entity.db2.GeoEntity">
+        UPDATE <include refid="table"/>
+        SET <include refid="set"/>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 单批更新 -->
+    <update id="updateBatch" parameterType="list">
+        UPDATE <include refid="table"/>
+        SET
+        feature_name = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.featureName}
+        </foreach>
+        END,
+        geom = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.geom, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler}
+        </foreach>
+        END,
+        geom_type = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.geomType}
+        </foreach>
+        END,
+        center_point = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.centerPoint, typeHandler=xyz.dreature.smit.common.handler.GeoTypeHandler}
+        </foreach>
+        END,
+        address = CASE
+        <foreach collection="list" item="item">
+            WHEN id = #{item.id} THEN #{item.address}
+        </foreach>
+        END,
+        updated_at = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单项插入或更新 -->
+    <insert id="upsert" parameterType="xyz.dreature.smit.common.model.entity.db2.GeoEntity">
+        INSERT INTO <include refid="table"/> (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+        ON CONFLICT (feature_id) DO UPDATE
+        SET <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单批插入或更新 -->
+    <insert id="upsertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/> (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+        ON CONFLICT (feature_id) DO UPDATE
+        SET <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单项删除 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM <include refid="table"/> WHERE id = #{id}
+    </delete>
+
+    <!-- 单批删除 -->
+    <delete id="deleteBatchByIds" parameterType="list">
+        DELETE FROM <include refid="table"/>
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 清空 -->
+    <update id="truncate">
+        TRUNCATE TABLE <include refid="table"/> RESTART IDENTITY
+    </update>
+</mapper>

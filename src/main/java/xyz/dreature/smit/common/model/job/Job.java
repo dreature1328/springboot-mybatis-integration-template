@@ -25,6 +25,7 @@ public class Job {
     private List<Map<String, Object>> params; // 任务参数
 
     // ===== 构造方法 =====
+
     // 无参构造器
     public Job() {
         this.jobId = "JOB" + "-" + IdUtil.objectId();
